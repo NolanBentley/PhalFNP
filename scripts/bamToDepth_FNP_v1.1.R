@@ -69,11 +69,13 @@ for(i in 1:length(bedName)){
 if(length(depthVec)>0){
   library(parallel)
   currCode <- paste0(
-    "cd ~/../SharedUser/FastNeutron/alignments/; ",
+    "if ! test -f ",depthVec,"; then ",
     "samtools depth -b ",bedName," ", bamVec," > ",
-    depthVec
+    depthVec, '; echo "########" > ',depthVec,"; fi"
   )
   cl <- makeCluster(nCores)
   parSapply(cl = cl,X = currCode,FUN = function(x){cat("\n",x,"\n");out <- system(x,wait = T);cat("\n",x," done!\n"); return(c(x,out))})
   stopCluster(cl)
 }
+
+print(head(currCode))
