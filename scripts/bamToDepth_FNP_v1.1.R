@@ -8,6 +8,7 @@ byLen <- 20000
 buffer <- 2000
 regionWidth <- 5000
 steps       <- 5
+nCores <- 10
 
 #Setup packages
 packageDir <- file.path(wd,"R")
@@ -72,7 +73,6 @@ if(length(depthVec)>0){
     "samtools depth -b ",bedName," ", bamVec," > ",
     depthVec
   )
-  nCores <- max(c(1,min(c(length(currCode),ceiling(detectCores()/2)))))
   cl <- makeCluster(nCores)
   parSapply(cl = cl,X = currCode,FUN = function(x){cat("\n",x,"\n");out <- system(x,wait = T);cat("\n",x," done!\n"); return(c(x,out))})
   stopCluster(cl)
