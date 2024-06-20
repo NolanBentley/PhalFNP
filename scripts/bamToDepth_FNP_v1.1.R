@@ -16,8 +16,6 @@ library(Biostrings) #Installation somewhat tricky
 
 #Use paths
 setwd(wd)
-dir.create("bed"     ,showWarnings = F)
-dir.create("depths"  ,showWarnings = F)
 dir.create(packageDir,showWarnings = F)
 .libPaths(packageDir)
 if(!all(packageVec%in%installed.packages())){install.packages(packageVec,lib=packageDir, repos='http://cran.us.r-project.org')}
@@ -31,27 +29,26 @@ initDf <- data.frame(
 )
 
 #Find bam files
-bamVec<-list.files(bamPath,pattern = "bam$",full.names = T)
-bamVec<-bamVec[order(as.numeric(gsub("_.*","",gsub("^.._","",gsub(".*FIL","",bamVec)))))]
+bamVec<-file.path(getwd(),list.files(bamPath,pattern = "bam$",full.names = T))
+bamVec<-bamVec[order(as.numeric(gsub("_.*","",gsub("^.._","",gsub(".*FIL","",basename(bamVec))))))]
 trimmedBam <- gsub("\\.bam","",bamVec)
-
-#Summarize fbam files analyzed
-write(bamVec,"data/listOfBamFilesInDepth.txt")
 
 #Create filenames
 byLenText <- paste0(buffer/1000,"Kbuffer_",byLen/1000,"Kint_",regionWidth/1000,"Kwide_",1:steps,"of",steps)
-bedName   <- file.path(wd,bedPath,paste0("regions_",byLenText,".bed"))
+bedName   <- file.path(getwd(),bedPath,paste0("regions_",byLenText,".bed"))
 fileDf <- data.frame(bam = bamVec)
 for(i in 1:length(byLenText)){
-  fileDf[[i+1]]<-file.path(wd,depthPath,paste0(basename(trimmedBam),"_",byLenText[i],"int.depth.out"))
+  fileDf[[i+1]]<-file.path(getwd(),depthPath,paste0(basename(trimmedBam),"_",byLenText[i],"int.depth.out"))
 }
 fileDf <- data.frame(bam = fileDf$bam,depth=as.vector(unlist(fileDf[,2:ncol(fileDf)])))
-tail(fileDf)
-
 
 #Remove files with the files already extant
-bamVec   <- fileDf$bam[!file.exists(fileDf$depth)]
-depthVec <- fileDf$depth[!file.exists(fileDf$depth)]
+fileDf$exist <- file.exists(fileDf$depth)
+bamVec   <- fileDf$bam[!fileDf$exist]
+depthVec <- fileDf$depth[!fileDf$exist]
+
+#Summarize fbam files analyzed
+write.csv(fileDf,"data/bamFilesInDepth.csv")
 
 
 #Generate bed files
