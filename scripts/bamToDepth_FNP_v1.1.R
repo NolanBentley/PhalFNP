@@ -4,7 +4,7 @@ bamPath <- "data_ignored/primary/bam"
 bedPath <- "data_ignored/secondary/bed"
 depthPath <- "data_ignored/secondary/depths"
 fastaPath <- "data_ignored/primary/assembly/phal_assemblyV3.fasta"
-byLen <- 20000
+byLen <- 40000
 buffer <- 2000
 regionWidth <- 5000
 steps       <- 5
