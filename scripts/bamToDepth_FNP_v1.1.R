@@ -8,7 +8,7 @@ byLen <- 20000
 buffer <- 2000
 regionWidth <- 5000
 steps       <- 5
-nCores <- 10
+nCores <- 20
 
 #Setup packages
 packageDir <- file.path(wd,"R")
@@ -48,10 +48,6 @@ fileDf$exist <- file.exists(fileDf$depth)
 bamVec   <- fileDf$bam[!fileDf$exist]
 depthVec <- fileDf$depth[!fileDf$exist]
 
-#Summarize fbam files analyzed
-write.csv(fileDf,"data/bamFilesInDepth.csv")
-
-
 #Generate bed files
 for(i in 1:nrow(initDf)){
   currDf <- data.frame(chr=initDf$chr[i],min=seq(buffer,initDf[i,2]-buffer,by=byLen),
@@ -65,12 +61,22 @@ for(i in 1:length(bedName)){
   write.table(outDf[stepVec==i,],file = bedName[i],row.names = F,col.names = F,quote = F)
 }
 
+#Add in bed files
+fileDf$bed <- NA
+for(i in 1:length(bedName)){
+  fileDf$bed[grep(paste0("_",i,"of",length(bedName),"int"),fileDf$depth)]<-bedName[i]
+}
+bedVec<-fileDf$bed
+
+#Summarize fbam files analyzed
+write.csv(fileDf,"data/bamFilesInDepth.csv")
+
 #Run depth calculations
 if(length(depthVec)>0){
   library(parallel)
   currCode <- paste0(
     "if ! test -f ",depthVec,"; then ",
-    "samtools depth -b ",bedName," ", bamVec," > ",
+    "samtools depth -b ",bedVec," ", bamVec," > ",
     depthVec, '; echo "########" > ',depthVec,"; fi"
   )
   cl <- makeCluster(nCores)
