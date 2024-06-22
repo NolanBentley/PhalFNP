@@ -77,7 +77,7 @@ if(length(depthVec)>0){
   currCode <- paste0(
     "if ! test -f ",depthVec,"; then ",
     "samtools depth -b ",bedVec," ", bamVec," > ",
-    depthVec, '; echo "########" > ',depthVec,"; fi"
+    depthVec, '; echo "########" >> ',depthVec,"; fi"
   )
   cl <- makeCluster(nCores)
   parSapply(cl = cl,X = currCode,FUN = function(x){cat("\n",x,"\n");out <- system(x,wait = T);cat("\n",x," done!\n"); return(c(x,out))})
