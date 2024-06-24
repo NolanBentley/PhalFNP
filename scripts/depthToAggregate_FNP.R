@@ -1,30 +1,37 @@
-#Visualize depths
-library(data.table)
-depthVec2 <- list.files("~/Experiments/FastNeutron/analysis/depths/",pattern = "depth\\.out$",full.names = T)
-#Calculate the mean depth per window (byLen)
-aggFun1 <- function(currFile,byLen){
-  library(data.table)
-  x<-fread(currFile)
-  x$interval <- floor(x$V2/byLen)
-  currAg <- aggregate(x$V3,by=list(x$V1,x$interval),function(x){c(mean(x),sd(x),length(na.omit(x)))})
-  outDf <- data.frame(
-    win = byLen,
-    ind = basename(currFile),
-    chr = currAg$Group.1,
-    int = currAg$Group.2,
-    avg = currAg$x[,1],
-    sd  = currAg$x[,2],
-    n   = currAg$x[,3]
-  )
-}
-i<-1
-for(i in 1:length(depthVec2)){
-  if(i==1){aggDf <- NULL}
-  aggDf  <- rbind(aggDf,aggFun1(depthVec2[i],byLen))
-  print(i)
-}
+#Setup variables
+wd       <- "~/Experiments/PhalFNP/"
+depthDir <- "./data_ignored/secondary/depths"
+outDir   <- "./data/"
+prelimFile <- paste0("prelimAggregateDepths_",format(Sys.time(), "%Y%m%d_%H%M"),".csv")
+totalSteps <- 5
+nCores     <- min(c(20,detectCores()/2))
 
-write.csv(aggDf,file = "~/Experiments/FastNeutron/analysis/prelimAggregateDepths.csv")
+#Setup the environment
+setwd(wd)
+library(data.table)
+library(parallel)
+
+## Load functions
+# Calculate the mean depth per window (byLen)
+source('./scripts/aggFun1.R')
+
+
+#Get data
+depthFileList <- lapply(1:totalSteps,function(x){list.files(depthDir,pattern = paste0(x,"of",totalSteps,"int.depth\\.out$"),full.names = T)})
+cl <- makeCluster(nCores)
+stopCluster(cl)
+for(j in 1:length(depthFileList)){
+  if(j==1){aggDf <- NULL}
+  byLen <- NULL #Triggers aggFun1 to recalculate each step
+  cat("\n\n\n",j,"\n")
+  currDepthFiles <- depthFileList[[j]]
+  currDepthFiles <- currDepthFiles[1:40]
+  parOut <- parallel::parSapply(currDepthFiles,cl,function(x){cbind(j,i,aggFun1(currDepthFiles,byLen=byLen))})
+  aggDf<- list(aggDf,parOut)
+}
+write.csv(aggDf,file = file.path(outDir,prelimFile))
+stopCluster(cl)
+
 #aggDf <- data.table::fread("~/Experiments/FastNeutron/analysis/prelimAggregateDepths.csv")
 
 #Remove missing values abnd regions with missing measurements
