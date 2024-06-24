@@ -1,7 +1,7 @@
 #Setup variables
-wd       <- "~/Experiments/PhalFNP/"
+wd       <- "~/Experiments/PhalFNP"
 depthDir <- "./data_ignored/secondary/depths"
-outDir   <- "./data/"
+outDir   <- "./data_ignored/secondary"
 prelimFile <- paste0("prelimAggregateDepths_",format(Sys.time(), "%Y%m%d_%H%M"),".csv")
 totalSteps <- 5
 nCores     <- min(c(10,parallel::detectCores()/2))
