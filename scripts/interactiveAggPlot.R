@@ -37,7 +37,7 @@ aggPlotFun <- function(plottedDf,fileVec){
         x = currDfSub$IntervalMidpoint_Mbp,
         y = currDfSub$median,
         color=currDfSub$id,
-        customdata = currDfSub$singleLineSingleChr,
+        customdata = gsub("^\\.","",currDfSub$singleLineSingleChr),
         showlegend = F,
         hovertemplate=paste(
           "<b>id:  </b>",currDfSub$id,"<br>",
