@@ -4,7 +4,7 @@ depthDir <- "./data_ignored/secondary/depths"
 outDir   <- "./data_ignored/secondary"
 prelimFile <- paste0("prelimAggregateDepths_",format(Sys.time(), "%Y%m%d_%H%M"),".csv")
 totalSteps <- 5
-nCores     <- min(c(10,parallel::detectCores()/2))
+nCores     <- min(c(20,parallel::detectCores()/2))
 
 #Setup the environment
 setwd(wd)
@@ -27,7 +27,7 @@ for(j in 1:length(depthFileList)){
   parOut   <- parallel::parSapply(cl,currDepthFiles,aggFun2,simplify = F)
   parOutDf <- do.call("rbind",parOut)
   #View(parOutDf)
-  aggDf <- rbind(aggDf,parOut)
+  aggDf <- rbind(aggDf,parOutDf)
 }
 write.csv(aggDf,file = file.path(outDir,prelimFile))
 stopCluster(cl)
