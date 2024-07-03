@@ -1,4 +1,3 @@
-
 aggPlotFun <- function(plottedDf,fileVec){
   library(ggplot2)
   library(hexbin)
@@ -56,12 +55,10 @@ aggPlotFun <- function(plottedDf,fileVec){
           window.open(url);
         });
       }
-    "
+      "
     )
-    
-    #Make file
     dir.create(dirname(currFile),recursive = T,showWarnings = F)
     saveWidget(currPlotly,file = currFile,selfcontained = T)
-    print(paste0(currFile," (",i," of ",length(uniFiles),")"))
+    print(paste0(currFile," (",i," of ", length(uniFiles),")"))
   }
 }

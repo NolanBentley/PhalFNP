@@ -93,5 +93,7 @@ aggPlotFun(aggDf,aggDf$singleLineSingleChr)
 testDf <- aggDf[aggDf$id%in%c("phal_FIL20_020_H_M2_1",aggDf$id[which.max(aggDf$median)]),]
 aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineSingleChr)
 aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineSingleChr)
+aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineMultiChr)
+aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineMultiChr)
 
 
