@@ -16,7 +16,7 @@ aggDf <- read.csv(aggFile)
 
 #### Remove unhelpful records ####
 ##### Format chr ####
-aggDf$chr <- gsub(" ","0",gsub(".*hr","Chr",format(aggDf$chr)))
+aggDf$chr <- gsub(" ","0",gsub(".*Chr","Chr",format(aggDf$chr)))
 if(is.null(aggDf$chr_orig)){aggDf$chr_orig <- aggDf$chr}
 aggDf$chrLogic <- grepl("^(C|c)hr",aggDf$chr_orig)
 aggDf$chr[!aggDf$chrLogic] <- "scaffold"
