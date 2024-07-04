@@ -18,45 +18,81 @@ aggPlotFun <- function(plottedDf,fileVec){
   uniFiles <- sort(unique(fileVecSub))
   for(i in 1:length(uniFiles)){
     currFile  <- uniFiles[i]
-    currDf    <- plottedDf   [fileVec   ==currFile,]
-    currDfSub <- plottedDfSub[fileVecSub==currFile,]
+    currDf_i    <- plottedDf   [fileVec   ==currFile,]
+    currDf_i$id <- as.factor(currDf_i$id)
+    currDfSub_i <- plottedDfSub[fileVecSub==currFile,]
+    currDfSub_i$id <- factor(currDfSub_i$id,levels=levels(currDf_i$id))
     
-    #Initialize plot
-    currPlot <- ggplot(currDf,aes(IntervalMidpoint_Mbp,median))+
-      theme_bw()+
-      guides(color="none")+
-      facet_wrap(~chr_orig,nrow = 3)+
-      labs(x="Interval midpoint (Mbp)",y="Median(average read depth)",title=basename(currFile))
-    #Add hex plot
-    currPlot <- currPlot +
-      geom_hex(binwidth=c(1,1))+
-      scale_fill_gradientn(colours = colsGrad)
-    
-    currPlotly <- ggplotly(currPlot) %>% add_trace(
-        type="scatter",mode = "markers",
-        x = currDfSub$IntervalMidpoint_Mbp,
-        y = currDfSub$median,
-        color=currDfSub$id,
-        customdata = gsub("^\\.","/PhalFNP",currDfSub$singleLineSingleChr),
-        showlegend = F,
-        hovertemplate=paste(
-          "<b>id:  </b>",currDfSub$id,"<br>",
-          "<b>chr: </b>",currDfSub$chr_orig,"<br>",
-          "<b>Interval (Mbp): </b>",currDfSub$min/1000000,"-",currDfSub$max/1000000,"<br>",
-          "<b>Median value: </b>",currDfSub$median,"<br>"
+    uniChr    <- unique(plottedDf$chr[fileVec==currFile])
+    xLims <- c(min(currDf_i$IntervalMidpoint_Mbp),max(currDf_i$IntervalMidpoint_Mbp))
+    yLims <- c(min(currDf_i$median),max(currDf_i$median)+0.1*(max(currDf_i$median)-min(currDf_i$median)))
+    for(j in 1:length(uniChr)){
+      currChr  <-uniChr[j]
+      currDf   <- currDf_i   [currDf_i$chr==currChr   ,]
+      currDfSub<- currDfSub_i[currDfSub_i$chr==currChr,]
+      
+      #Initialize plot
+      currPlot <- ggplot(currDf,aes(IntervalMidpoint_Mbp,median))+
+        theme_bw()+
+        guides(color="none")+
+        labs(x="Interval midpoint (Mbp)",y="Median(average read depth)")+
+        coord_cartesian(xlim=xLims,ylim=yLims)
+      
+      #Add hex plot
+      currPlot <- currPlot +
+        geom_hex(binwidth=c(1,1))+
+        scale_fill_gradientn(colours = colsGrad)
+      
+      #Annotate name
+      anno <- paste0(currChr,": ",gsub("LSVPlot_|\\.html","",basename(currFile)))
+      currPlot <- currPlot + 
+        annotate("text",label=anno,color="black",
+                 x=mean(xLims),y=yLims[2]+0*(yLims[2]-yLims[1]))
+      
+      #currPlotly <- currPlotly %>% 
+      # layout(annotations = list(x=0.1,y=1.03,text=anno,showarrow=F))#,xref="paper",yref="paper"))
+      
+      #Add interactive scatterplot
+      currPlotly <- ggplotly(currPlot) %>%
+        add_trace(
+          type="scatter",mode = "markers",
+          x = currDfSub$IntervalMidpoint_Mbp,
+          y = currDfSub$median,
+          color=currDfSub$id,
+          customdata = gsub("^\\.","/PhalFNP",currDfSub$singleLineSingleChr),
+          showlegend = F,
+          hovertemplate=paste(
+            "<b>id:  </b>",currDfSub$id,"<br>",
+            "<b>chr: </b>",currDfSub$chr_orig,"<br>",
+            "<b>Interval start (bp): </b>",format(currDfSub$min,big.mark = ","),"<br>",
+            "<b>Interval end (bp): </b>",format(currDfSub$max,big.mark = ","),"<br>",
+            "<b>Interval range (bp): </b>",format(currDfSub$max - currDfSub$min +1,big.mark = ","),"<br>",
+            "<b>Median value: </b>",round(currDfSub$median,3)
+          )
         )
+        
+  	  #Hyperlink script from: https://stackoverflow.com/questions/71819237/ggplotly-clickable-link-in-r-plot
+      currPlotly <- onRender(
+        currPlotly, "
+        function(el) {
+          el.on('plotly_click', function(d) {
+            var url = d.points[0].customdata;
+            window.open(url);
+          });
+        }
+        "
       )
-	  #Hyperlink script from: https://stackoverflow.com/questions/71819237/ggplotly-clickable-link-in-r-plot
-    currPlotly <- onRender(
-      currPlotly, "
-      function(el) {
-        el.on('plotly_click', function(d) {
-          var url = d.points[0].customdata;
-          window.open(url);
-        });
-      }
-      "
-    )
+      
+      
+      #Add to combined plots
+      if(j==1){plotList <- list()}
+      plotList[[j]] <- currPlotly
+    }
+    if(length(plotList)>3){
+      currPlotly <- subplot(plotList,nrows = 3,shareX = T,shareY = T,titleX = T,titleY = T)
+    }else{
+      currPlotly <- subplot(plotList,nrows = length(plotList),shareX = T,shareY = T,titleX = T,titleY = T)
+    }
     dir.create(dirname(currFile),recursive = T,showWarnings = F)
     saveWidget(currPlotly,file = currFile,selfcontained = T)
     print(paste0(currFile," (",i," of ", length(uniFiles),")"))
