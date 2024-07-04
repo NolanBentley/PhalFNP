@@ -43,28 +43,51 @@ aggPlotFun <- function(plottedDf,fileVec){
         annotate("text",label=anno,color="black",
                  x=mean(xLims),y=yLims[2]+0*(yLims[2]-yLims[1]))
       
-      #currPlotly <- currPlotly %>% 
-      # layout(annotations = list(x=0.1,y=1.03,text=anno,showarrow=F))#,xref="paper",yref="paper"))
-      
       #Add interactive scatterplot
-      currPlotly <- ggplotly(currPlot) %>%
-        add_trace(
-          type="scatter",mode = "markers",
-          x = currDfSub$IntervalMidpoint_Mbp,
-          y = currDfSub$median,
-          color=currDfSub$id,
-          customdataMulti  = gsub("^\\.","/PhalFNP",currDfSub$multiLineSingleChr ),
-          customdataSingle = gsub("^\\.","/PhalFNP",currDfSub$singleLineSingleChr),
-          showlegend = F,
-          hovertemplate=paste(
-            "<b>id:  </b>",currDfSub$id,"<br>",
-            "<b>chr: </b>",currDfSub$chr_orig,"<br>",
-            "<b>Interval start (bp): </b>",format(currDfSub$min,big.mark = ","),"<br>",
-            "<b>Interval end (bp): </b>",format(currDfSub$max,big.mark = ","),"<br>",
-            "<b>Interval range (bp): </b>",format(currDfSub$max - currDfSub$min +1,big.mark = ","),"<br>",
-            "<b>Median value: </b>",round(currDfSub$median,3)
+      currPlotly <- ggplotly(currPlot)
+      
+      template <- paste(
+        "<b>id:  </b>",currDfSub$id,"<br>",
+        "<b>chr: </b>",currDfSub$chr_orig,"<br>",
+        "<b>Interval start (bp): </b>",format(currDfSub$min,big.mark = ","),"<br>",
+        "<b>Interval end (bp): </b>",format(currDfSub$max,big.mark = ","),"<br>",
+        "<b>Interval range (bp): </b>",format(currDfSub$max - currDfSub$min +1,big.mark = ","),"<br>",
+        "<b>Median value: </b>",round(currDfSub$median,3)
+      )
+      if(length(uniChr)>1){
+        currPlotly <- currPlotly %>%
+          add_trace(
+            type="scatter",mode = "markers",
+            x = currDfSub$IntervalMidpoint_Mbp,
+            y = currDfSub$median,
+            color=currDfSub$id,
+            customdata = gsub("^\\.","/PhalFNP",currDfSub$multiLineSingleChr),
+            showlegend = F,
+            hovertemplate= template
           )
-        )
+      }else if(length(unique(currDfSub_i$id))>1){
+        currPlotly <- currPlotly %>%
+          add_trace(
+            type="scatter",mode = "markers",
+            x = currDfSub$IntervalMidpoint_Mbp,
+            y = currDfSub$median,
+            color=currDfSub$id,
+            customdata = gsub("^\\.","/PhalFNP",currDfSub$singleLineSingleChr),
+            showlegend = F,
+            hovertemplate= template
+          )
+      }else{
+        currPlotly <- currPlotly %>%
+          add_trace(
+            type="scatter",mode = "markers",
+            x = currDfSub$IntervalMidpoint_Mbp,
+            y = currDfSub$median,
+            color=currDfSub$id,
+            customdata = gsub("^\\.","/PhalFNP",currDfSub$singleLineMultiChr),
+            showlegend = F,
+            hovertemplate= template
+          )
+      }
         
       #Add to combined plots
       if(j==1){plotList <- list()}
@@ -72,43 +95,22 @@ aggPlotFun <- function(plottedDf,fileVec){
     }
     #Combine if needed and add hyperlinks
     if(length(plotList)>1){
-      if(length(plotList)>3){
+      if(length(plotList)>2){
         currPlotly <- subplot(plotList,nrows = 3,shareX = T,shareY = T,titleX = T,titleY = T)
-        currPlotly <- onRender(
-          currPlotly, "
-        function(el) {
-          el.on('plotly_click', function(d) {
-            var url = d.points[0].customdataMulti;
-            window.open(url);
-          });
-        }
-        "
-        )
       }else{
         currPlotly <- subplot(plotList,nrows = length(plotList),shareX = T,shareY = T,titleX = T,titleY = T)
-        currPlotly <- onRender(
-          currPlotly, "
-        function(el) {
-          el.on('plotly_click', function(d) {
-            var url = d.points[0].customdataMulti;
-            window.open(url);
-          });
-        }
-        "
-        )
       }
-    }else{
-      currPlotly <- onRender(
+    }
+    currPlotly <- onRender(
         currPlotly, "
         function(el) {
           el.on('plotly_click', function(d) {
-            var url = d.points[0].customdataSingle;
+            var url = d.points[0].customdata;
             window.open(url);
           });
         }
         "
-      )
-    }
+    )
     
     #Save output
     dir.create(dirname(currFile),recursive = T,showWarnings = F)

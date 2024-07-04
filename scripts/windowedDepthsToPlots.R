@@ -75,7 +75,7 @@ aggDf$singleLineSingleChr <- paste0(outDir,"singleChr/singleLine_",aggDf$chr,"/"
 ##### Add values for plots ####
 aggDf$IntervalMidpoint_Mbp <- (aggDf$max+aggDf$min)/2000000
 aggDf$IntervalRange_bp <- aggDf$max-aggDf$min+1
-aggDf <- aggDf[order(aggDf$chr,aggDf$idFamBuff,aggDf$min),]
+aggDf <- aggDf[order(aggDf$chr_orig,aggDf$chr,aggDf$idNumBuffered,aggDf$min),]
 
 ##### Everything plot ####
 aggPlotFun(aggDf,aggDf$multiLineMultiChr)
