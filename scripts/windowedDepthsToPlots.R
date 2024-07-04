@@ -71,6 +71,24 @@ aggDf$multiLineSingleChr  <- paste0(outDir,"singleChr/LSVPlot_",aggName,"_",aggD
 aggDf$singleLineMultiChr  <- paste0(outDir,"multiChr/",aggDf$idNum_bi,"/LSVPlot_",aggName,"_",aggDf$id,".html")
 aggDf$singleLineSingleChr <- paste0(outDir,"singleChr/singleLine_",aggDf$chr,"/",aggDf$idNum_bi,"/LSVPlot_",aggName,"_",aggDf$chr,"_",aggDf$id,".html")
 
+#### Build index ####
+index <- c('<!DOCTYPE html>','<html>','<head>','<title>My GitHub Pages Site</title>','</head>','<body>','<h1>Hello world!</h1>','<p>Welcome to my GitHub Pages site!</p>','</body>','</html>')
+index_endBody <- which(trimws(index)=="</body>")
+index_added <- c(
+  "<br><br><b><u>multiLineMultiChr</b></u>",
+  sort(unique(aggDf$multiLineMultiChr)),
+  "<br><br><b><u>multiLineSingleChr</b></u>",
+  sort(unique(aggDf$multiLineSingleChr)),
+  "<br><br><b><u>Sample Bins</b></u>",
+  sort(unique(aggDf$idNum_bin))
+)
+index_built <- c(
+  index[1:(index_endBody-1)],
+  index_added,
+  index[index_endBody:length(index)]
+)
+write(index_built,"index.html")
+
 #### Plots #####
 ##### Add values for plots ####
 aggDf$IntervalMidpoint_Mbp <- (aggDf$max+aggDf$min)/2000000
@@ -90,10 +108,11 @@ aggPlotFun(aggDf,aggDf$singleLineMultiChr)
 aggPlotFun(aggDf,aggDf$singleLineSingleChr)
 
 ### testing plots
+'
 testDf <- aggDf[aggDf$id%in%c("phal_FIL20_020_H_M2_1",aggDf$id[which.max(aggDf$median)]),]
 aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineSingleChr)
 aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineSingleChr)
 aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineMultiChr)
 aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineMultiChr)
-
+'
 
