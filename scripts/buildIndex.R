@@ -25,11 +25,18 @@ index <- c(
 index_endBody <- which(trimws(index)=="</body>")
 singleLineBinPages <- paste0("./depthImages/singleLineIndexes/",sort(unique(aggDf$idNum_bin)),".html")
 index_added <- c(
-  "<br><br><b><u>multiLineMultiChr</b></u><ul>",
+  "<br><br><b><u>multi-sample multi-chromosome plots</b></u>",
+  "<br>Clicking on points in these plots will take you to that chromosome's multi-sample plot.",
+  "<br>Note: These are large (~40Mb) files and will take a bit to load and render.",
+  "<ul>",
   sort(unique(aggDf$multiLineMultiChr)),
-  "</ul><br><br><b><u>multiLineSingleChr</b></u><ul>",
+  "</ul><br><br><b><u>multi-sample single-chromosome plots</b></u>",
+  "<br>Clicking on points in these plots will take you to that sample's single-chromosome plot (see next section)",
+  "<ul>",
   sort(unique(aggDf$multiLineSingleChr)),
-  "</ul><br><br><b><u>Sample Bins (section incomplete)</b></u><ul>",
+  "</ul><br><br><b><u>Single line plots</b></u>",
+  "This section is still under development. This section takes you to single-sample plots based on the sample ID.",
+  "<ul>",
   singleLineBinPages,"</ul>"
 )
 htmlPos <-grep("html",index_added)
