@@ -35,7 +35,7 @@ aggPlotFun <- function(plottedDf,fileVec){
       #Add hex plot
       currPlot <- currPlot +
         geom_hex(binwidth=c(1,1))+
-        scale_fill_gradient(low = "grey90",high = "grey30")
+        scale_fill_gradient(low = "grey90",high = "grey30",trans="log10",name = "log10(count)")
       
       #Annotate name
       anno <- paste0(currChr,": ",gsub("LSVPlot_|\\.html","",basename(currFile)))
@@ -72,7 +72,7 @@ aggPlotFun <- function(plottedDf,fileVec){
             x = currDfSub$IntervalMidpoint_Mbp,
             y = currDfSub$median,
             color=currDfSub$id,
-            customdata = gsub("^\\.","/PhalFNP",currDfSub$singleLineSingleChr),
+            customdata = gsub("^\\.","/PhalFNP",currDfSub$singleLineMultiChr),
             showlegend = F,
             hovertemplate= template
           )
@@ -83,7 +83,7 @@ aggPlotFun <- function(plottedDf,fileVec){
             x = currDfSub$IntervalMidpoint_Mbp,
             y = currDfSub$median,
             color=currDfSub$id,
-            customdata = gsub("^\\.","/PhalFNP",currDfSub$singleLineMultiChr),
+            customdata = gsub("^\\.","/PhalFNP",currDfSub$multiLineSingleChr),
             showlegend = F,
             hovertemplate= template
           )

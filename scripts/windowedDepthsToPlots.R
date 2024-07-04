@@ -32,10 +32,30 @@ aggDf$id_chr <- paste0(aggDf$id,"_",aggDf$chr)
 aggDf$id_seq <- paste0(aggDf$id,"_",aggDf$chrBuffered)
 
 ##### Find subset with divergent patterns#####
-aggDens <- density(aggDf$median[aggDf$chrLogic],adjust = 0.1)
-plot(aggDens,ylim=c(0,0.06))
+if(!exists("aggDf_presub")){aggDf_presub <- aggDf}
+aggDens <- density(aggDf_presub$median[aggDf$chrLogic],adjust = 0.1)
 cuttoffs <- c(-4.5,3.5)
-abline(v=cuttoffs,col="red")
+
+aggDens$haploidLogic    <- aggDens$x< -5
+aggDens$diploidLogic    <- aggDens$x> -5 & aggDens$x< 5
+aggDens$triploidLogic   <- aggDens$x>  5 & aggDens$x< 10
+aggDens$tetraploidLogic <- aggDens$x> 10 & aggDens$x< 15
+aggDens$pentaploidLogic <- aggDens$x> 15 & aggDens$x< 20
+
+peaks <- c(
+  haploid =aggDens$x[aggDens$haploidLogic][which.max(aggDens$y[aggDens$haploidLogic])],
+  diploid =aggDens$x[aggDens$diploidLogic][which.max(aggDens$y[aggDens$diploidLogic])],
+  triploid=aggDens$x[aggDens$triploidLogic][which.max(aggDens$y[aggDens$triploidLogic])],
+  tetraploid=aggDens$x[aggDens$tetraploidLogic][which.max(aggDens$y[aggDens$tetraploidLogic])],
+  pentaploid=aggDens$x[aggDens$pentaploidLogic][which.max(aggDens$y[aggDens$pentaploidLogic])]
+)
+plot(aggDens,ylim=c(0,0.035))
+abline(v=cuttoffs,col="red",lwd=0.5)
+abline(v = peaks,col="blue",lwd=1,lty=2)
+lines(aggDens,lwd=2)
+text(y = c(0.034,0.030),x = peaks,
+     labels = paste0(names(peaks),"\n(",round(peaks,3),")"),
+     col="navyblue",lwd=2,lty=2)
 
 aggDf$hasDivergentMedian <- aggDf$median<=min(cuttoffs)|aggDf$median>=max(cuttoffs)
 
@@ -45,7 +65,6 @@ aggDf$id_chr_inDiv <- aggDf$id_seq%in%names(divPerLG)
 mean(aggDf$id_chr_inDiv)
 
 ##### Subset affDf based on having at least 1 divergent median per LG ####
-if(!exists("aggDf_presub")){aggDf_presub <- aggDf}
 aggDf <- aggDf[aggDf$id_chr_inDiv,]
 
 #### Format descriptors ##### 
@@ -87,7 +106,7 @@ aggPlotFun(aggDf,aggDf$multiLineSingleChr)
 aggPlotFun(aggDf,aggDf$singleLineMultiChr)
 
 ### Single-line single-chromosome plots ###
-aggPlotFun(aggDf,aggDf$singleLineSingleChr)
+#aggPlotFun(aggDf,aggDf$singleLineSingleChr)
 
 ### testing plots
 testDf <- aggDf[aggDf$id%in%c("phal_FIL20_020_H_M2_1",aggDf$id[which.max(aggDf$median)]),]
@@ -98,5 +117,44 @@ aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineMultiChr)
 
 #### Save aggDf ####
 write.csv(aggDf,"data_ignored/secondary/plottedAggDf.csv")
+
+#### Making summary values ####
+aggDf_presub<- aggDf_presub[order(aggDf_presub$id,aggDf_presub$chr,aggDf_presub$min),]
+aggDf_presub$div <- aggDf_presub$median<min(cuttoffs)|aggDf_presub$median>max(cuttoffs)
+
+aggDf_presub$divMinus2 <- c(F,F,aggDf_presub$div[1:(nrow(aggDf_presub)-2)])
+aggDf_presub$divMinus1 <- c(F,aggDf_presub$div[1:(nrow(aggDf_presub)-1)])
+aggDf_presub$divPlus1 <- c(aggDf_presub$div[2:(nrow(aggDf_presub))],F)
+aggDf_presub$divPlus2 <- c(aggDf_presub$div[3:(nrow(aggDf_presub))],F,F)
+
+aggDf_presub$Win3Sum <- aggDf_presub$divMinus1 + aggDf_presub$div +  aggDf_presub$divPlus1
+aggDf_presub$Win5Sum <- aggDf_presub$divMinus1 + aggDf_presub$div +  aggDf_presub$divPlus1 + aggDf_presub$divMinus2 + aggDf_presub$divPlus2
+
+  
+win3Max <- aggregate(aggDf_presub$Win3Sum,by=list(aggDf_presub$id_seq),max)
+paste0("Of Id+Seq combos: ",sum(win3Max$x>=3)," (",round(mean(win3Max$x>=3)*100,2),"% of ",nrow(win3Max)," combos)")
+aggDf_noScaffold <- aggDf_presub[aggDf_presub$chrLogic,]
+win3Max <- aggregate(aggDf_noScaffold$Win3Sum,by=list(aggDf_noScaffold$id_seq),max)
+paste0("Of Id+chr combos (no scaffolds): ",sum(win3Max$x>=3)," (",round(mean(win3Max$x>=3)*100,2),"% of ",nrow(win3Max)," combos)")
+win3Max <- aggregate(aggDf_noScaffold$Win3Sum,by=list(aggDf_noScaffold$id),max)
+paste0("Of Ids: ",sum(win3Max$x>=3)," (",round(mean(win3Max$x>=3)*100,2),"% of ",nrow(win3Max)," combos)")
+
+
+win5Max <- aggregate(aggDf_presub$Win5Sum,by=list(aggDf_presub$id_seq),max)
+paste0("Of Id+Seq combos: ",sum(win5Max$x>=5)," (",round(mean(win5Max$x>=5)*100,2),"% of ",nrow(win5Max)," combos)")
+aggDf_noScaffold <- aggDf_presub[aggDf_presub$chrLogic,]
+win5Max <- aggregate(aggDf_noScaffold$Win5Sum,by=list(aggDf_noScaffold$id_seq),max)
+paste0("Of Id+chr combos (no scaffolds): ",sum(win5Max$x>=5)," (",round(mean(win5Max$x>=5)*100,2),"% of ",nrow(win5Max)," combos)")
+win5Max <- aggregate(aggDf_noScaffold$Win5Sum,by=list(aggDf_noScaffold$id),max)
+paste0("Of Ids: ",sum(win5Max$x>=5)," (",round(mean(win5Max$x>=5)*100,2),"% of ",nrow(win5Max)," combos)")
+
+
+
+
+
+
+
+
+
 
 
