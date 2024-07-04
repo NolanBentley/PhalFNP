@@ -1,11 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>My GitHub Pages Site</title>
+<title>
+<i>Panicum hallii</i> fast-neutron population large structural variant explorer
+</title>
 </head>
 <body>
-<h1>Hello world!</h1>
-<p>Welcome to my GitHub Pages site!</p>
+<h1>
+Welcome to the large variant explorer!
+</h1>
+<p>
+This website houses interactive plots for exploring coverage-based variants from the P. hal FNP.
+<br><br>As of 7/4/2024, this data visualizes two primary statistics; <br>
+<b>Hexagons:</b> the frequency of bins of position and normalized-coverage across the population being visualized.<br>
+<b>Points:</b> the normalized-coverage for specific samples subset to only the intervals where the absolute value of the y-axis exceeds certain cutoffs.
+<br><br>The y-axis is calculated from the median value across 5 intervals. 
+Each interval is summarized by the normalized mean read depth across a 2.5-5kb range of positions excluding positions with 0 depth. 
+<br>Each mean read depth has been tranformed by: 
+<b>first)</b> subtracting the median mean read depth across that sample. 
+<b>second)</b> dividing by the sample's mad.
+<b>third)</b> substracting by the loci's median normalized value.
+</p>
 <br><br><b><u>multiLineMultiChr</b></u><ul>
 <li><a href="/PhalFNP/depthImages/multiChr/LSVPlot_5x5KbEvery40kb_Chr.html">LSVPlot_5x5KbEvery40kb_Chr.html</a></li>
 <li><a href="/PhalFNP/depthImages/multiChr/LSVPlot_5x5KbEvery40kb_scaffold.html">LSVPlot_5x5KbEvery40kb_scaffold.html</a></li>
@@ -20,19 +35,19 @@
 <li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_5x5KbEvery40kb_Chr08.html">LSVPlot_5x5KbEvery40kb_Chr08.html</a></li>
 <li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_5x5KbEvery40kb_Chr09.html">LSVPlot_5x5KbEvery40kb_Chr09.html</a></li>
 <li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_5x5KbEvery40kb_scaffold.html">LSVPlot_5x5KbEvery40kb_scaffold.html</a></li>
-</ul><br><br><b><u>Sample Bins</b></u><ul>
-Lines000-099
-Lines100-099
-Lines100-199
-Lines200-299
-Lines300-399
-Lines400-399
-Lines400-499
-Lines500-599
-Lines600-599
-Lines600-699
-Lines700-799
-Lines800-899
-/ul
+</ul><br><br><b><u>Sample Bins (section incomplete)</b></u><ul>
+<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines000-099.html">Lines000-099.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines100-099.html">Lines100-099.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines100-199.html">Lines100-199.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines200-299.html">Lines200-299.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines300-399.html">Lines300-399.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines400-399.html">Lines400-399.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines400-499.html">Lines400-499.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines500-599.html">Lines500-599.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines600-599.html">Lines600-599.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines600-699.html">Lines600-699.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines700-799.html">Lines700-799.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines800-899.html">Lines800-899.html</a></li>
+</ul>
 </body>
 </html>
