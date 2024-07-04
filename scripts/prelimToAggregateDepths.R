@@ -7,11 +7,7 @@ aggDf <- read.csv(prelimFile)
 aggDf$ind <- gsub("__.*","",basename(aggDf$X))
 aggDf$chr <- gsub("-.*","",aggDf$interval)
 aggDf$interval <- paste0(aggDf$interval,"-",gsub(" ",0,format(aggDf$minInt)))
-<<<<<<< HEAD
 aggDf$ind_chr <- paste0(aggDf$ind,"_",aggDf$chr)
-=======
-
->>>>>>> 167e1b75c5dcdf8a9625f691cb9698defb92affc
 aggDf <- aggDf[order(aggDf$ind,aggDf$chr,aggDf$minInt),]
 aggDf$order <- 1:nrow(aggDf)
 
@@ -20,11 +16,7 @@ aggDf <- aggDf[!(is.na(aggDf$avg)|is.na(aggDf$sd)),]
 aggDf <- aggDf[aggDf$n>=(0.5*max(aggDf$n)),] #This means this method will not work for homozygous deletions
 
 #Remove regions with strongly skewed distributions
-<<<<<<< HEAD
 aggDf$meanMinusMedian <- (aggDf$avg - aggDf$med)
-=======
-aggDf$meanMinusMedian <- (aggDf$avg - aggDf$med)/
->>>>>>> 167e1b75c5dcdf8a9625f691cb9698defb92affc
 aggDiffMed <- aggregate(abs(aggDf$meanMinusMedian),by = list(aggDf$interval),median)
 diffNorm <- (aggDiffMed$x-median(aggDiffMed$x))/mad(aggDiffMed$x)
 hist(diffNorm,100000,xlim=c(-20,20))
