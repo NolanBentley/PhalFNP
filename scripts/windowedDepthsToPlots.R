@@ -75,16 +75,23 @@ aggDf$singleLineSingleChr <- paste0(outDir,"singleChr/singleLine_",aggDf$chr,"/"
 index <- c('<!DOCTYPE html>','<html>','<head>','<title>My GitHub Pages Site</title>','</head>','<body>','<h1>Hello world!</h1>','<p>Welcome to my GitHub Pages site!</p>','</body>','</html>')
 index_endBody <- which(trimws(index)=="</body>")
 index_added <- c(
-  "<br><br><b><u>multiLineMultiChr</b></u>",
+  "<br><br><b><u>multiLineMultiChr</b></u><ul>",
   sort(unique(aggDf$multiLineMultiChr)),
-  "<br><br><b><u>multiLineSingleChr</b></u>",
+  "</ul><br><br><b><u>multiLineSingleChr</b></u><ul>",
   sort(unique(aggDf$multiLineSingleChr)),
-  "<br><br><b><u>Sample Bins</b></u>",
-  sort(unique(aggDf$idNum_bin))
+  "</ul><br><br><b><u>Sample Bins</b></u><ul>",
+  sort(unique(aggDf$idNum_bin)),"/ul"
+)
+htmlPos <-grep("html",index_added)
+index_mod <- index_added
+index_mod[htmlPos] <- paste0('<li><a href="',
+       gsub("^\\.","/PhalFNP",index_added[htmlPos]),
+       '">',basename(index_added[htmlPos]),
+       "</a></li>"
 )
 index_built <- c(
   index[1:(index_endBody-1)],
-  index_added,
+  index_mod,
   index[index_endBody:length(index)]
 )
 write(index_built,"index.html")
