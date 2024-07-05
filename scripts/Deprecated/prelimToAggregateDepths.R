@@ -42,7 +42,6 @@ aggDf$regMad   <-regMad$x[match(aggDf$interval,regMad$Group.1)]
 
 ## Center by interval mean
 aggDf$avg_FullNorm <- (aggDf$avg_samNorm-aggDf$regMedian)
-<<<<<<< HEAD
 aggDf$avg_FullNorm_Trimmed <- aggDf$avg_FullNorm
 aggDf$avg_FullNorm_Trimmed[aggDf$regMad>10] <- NA
 
@@ -67,8 +66,9 @@ for(i in 1:nrow(aggDf2_rollMea)){
   if(i==1){
     outDf <- NULL
   }
-  if(is.null(aggDf2_rollMed$x[[i]])){next}
+  if(is.null(aggDf2_rollMed$x[[i]][1])){next}
   currDf <- data.frame(
+    i = i,
     id = gsub("(^.*)_(.*$)","\\1",aggDf2_rollMed$Group.1[i]),
     chr = gsub("(^.*)_(.*$)","\\2",aggDf2_rollMed$Group.1[i]),
     median = aggDf2_rollMed$x[[i]],
@@ -76,20 +76,10 @@ for(i in 1:nrow(aggDf2_rollMea)){
     min    = aggDf2_rollMin$x[[i]],
     max    = aggDf2_rollMax$x[[i]]
   )
-  currDf$order <- 1:nrow(currDf)
-  currDf$order2 <- 2
-  p1 <- ggplot(currDf,aes((max+min)/2000000,median,color=max-min+1))+
-    geom_line(color="black")+
-    geom_point()+
-    scale_color_viridis_c()+
-    theme_bw()+
-    coord_cartesian(xlim=c(0,maxPos),ylim=c(minValue,maxValue))+
-    labs(title=aggDf2_rollMed$Group.1[i],x="Mbp",y="Median of 5x avg coverage across 5Kbp most 40Kbp")
-  
-  htmlwidgets::saveWidget(plotly::ggplotly(p1),
-                          file=paste0("data_ignored/secondary/depthImages/",aggDf2_rollMed$Group.1[i],".html"))
-  print(i)
+  outDf <- rbind(outDf,currDf)
+  if(i%%1000==1){print(i)}
 }
+
 write.csv(outDf,"data_ignored/secondary/windowedDepths5x.csv")
 p2 <- ggplot(outDf[abs(outDf$median)>3&grepl("Chr",outDf$chr),],
              aes((max+min)/2000000,median,color=max-min+1))+
@@ -102,7 +92,6 @@ p2 <- ggplot(outDf[abs(outDf$median)>3&grepl("Chr",outDf$chr),],
 
 htmlwidgets::saveWidget(plotly::ggplotly(p1),
                         file=paste0("data_ignored/secondary/depthImages/",aggDf2_rollMed$Group.1[i],".html"))
-=======
 aggDf$avg_FullNorm_Trimmed[aggDf$regMad>10] <- NA
 
 aggDf$ind_chr <- paste0(aggDf$ind,"_",aggDf$chr)
