@@ -1,6 +1,7 @@
-aggPlotFun <- function(plottedDf,fileVec){
+aggPlotFun <- function(plottedDf,fileVec,genes){
   library(ggplot2)
   library(hexbin)
+  library(ggh4x)
   library(plotly)
   library(htmlwidgets)
   
@@ -10,6 +11,11 @@ aggPlotFun <- function(plottedDf,fileVec){
   
   #Loop across unique files
   uniFiles <- sort(unique(fileVecSub))
+  
+  #Load gene data
+  genes$chr<-genes$seqid
+  genes$yOffset <- genes$yOffset - min(genes$yOffset)
+  
   for(i in 1:length(uniFiles)){
     currFile  <- uniFiles[i]
     currDf_i    <- plottedDf   [fileVec   ==currFile,]
@@ -18,8 +24,8 @@ aggPlotFun <- function(plottedDf,fileVec){
     currDfSub_i$id <- factor(currDfSub_i$id,levels=levels(currDf_i$id))
     
     uniChr    <- unique(plottedDf$chr[fileVec==currFile])
-    xLims <- c(min(currDf_i$IntervalMidpoint_Mbp),max(currDf_i$IntervalMidpoint_Mbp))
-    yLims <- c(min(currDf_i$median),max(currDf_i$median)+0.1*(max(currDf_i$median)-min(currDf_i$median)))
+    xLims <- c(min(c(0,currDf_i$IntervalMidpoint_Mbp)),max(currDf_i$IntervalMidpoint_Mbp))
+    yLims <- c(min(c(0,currDf_i$median)),max(c(currDf_i$median)+0.1*(max(currDf_i$median)-min(currDf_i$median)),8))
     for(j in 1:length(uniChr)){
       currChr  <-uniChr[j]
       currDf   <- currDf_i   [currDf_i$chr==currChr   ,]
@@ -32,12 +38,29 @@ aggPlotFun <- function(plottedDf,fileVec){
         theme_bw()+
         guides(color="none")+
         labs(x="Interval midpoint (Mbp)\n ",y="\n Median(average read depth)")+
-        coord_cartesian(xlim=xLims,ylim=yLims)
+        scale_x_continuous(breaks     =seq(0,xLims[2],by=2),
+                           minor_breaks=seq(0,xLims[2],by=0.02),
+                           guide="axis_minor")+
+        coord_cartesian(xlim=xLims,ylim=yLims)+
+        theme(ggh4x.axis.ticks.length.minor=rel(1))
       
       #Add hex plot
       currPlot <- currPlot +
-        geom_hex(binwidth=c(0.75,0.5))+
+        geom_hex(binwidth=c(0.8,0.1))+
         scale_fill_gradient(low = "grey90",high = "grey50",name="Count\nper ID")
+      
+      #If only one chromosome, add in genes
+      if(length(uniChr)==1){
+        currPlot <- currPlot+geom_segment(
+          data = genes[genes$seqid%in%currChr,],
+          mapping = aes(x=x/1000000,xend=xend/1000000,y=yOffset,yend=yOffset,fill=NULL,text=attributes),
+          color="black"
+        )+ geom_point(
+          data = genes[genes$seqid%in%currChr,],
+          mapping = aes(x=x/1000000,y=yOffset,fill=NULL,text=attributes),
+          arrow = arrow(length=unit(0.001,"cm")),color="black"
+        )
+      }
       
       #Annotate name
       anno <- paste0(currChr,": ",gsub("LSVPlot_|\\.html","",basename(currFile)))
@@ -58,6 +81,7 @@ aggPlotFun <- function(plottedDf,fileVec){
       )
       
       if(length(uniChr)>1){
+        #Multi chr plot
         currPlotly <- currPlotly %>%
           add_trace(
             type="scatter",mode = "markers",
@@ -70,6 +94,7 @@ aggPlotFun <- function(plottedDf,fileVec){
             hovertemplate= template
           )
       }else if(length(unique(currDfSub_i$id))>1){
+        #Single chr multi line plot
         currPlotly <- currPlotly %>%
           add_trace(
             type="scatter",mode = "markers",
@@ -82,6 +107,7 @@ aggPlotFun <- function(plottedDf,fileVec){
             hovertemplate= template
           )
       }else{
+        #Single chr single line plot
         currPlotly <- currPlotly %>%
           add_trace(
             type="scatter",mode = "markers",
