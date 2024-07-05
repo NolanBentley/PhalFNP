@@ -72,9 +72,6 @@ aggDf <- aggDf[cuL$offDiploidLogic,]
 aggDf$newSamplePeakMean <- peakFinding(aggDf)
 aggDf$n <- aggDf$avg*2/aggDf$newSamplePeakMean
 
-#Do a window based analysis of consecutive intervals
-aggDf$rollMedian<-aggregate(aggDf2$avg_FullNorm_Trimmed,by=list(aggDf2$ind_chr),zoo::rollmean,k=5)
-
 #Save the windowed depths
 winL <- list()
 winL$aggWin_mean  <-aggregate(aggDf$n_og  ,by=list(aggDf$ind_chr),zoo::rollmean  ,k=5)
@@ -82,21 +79,19 @@ winL$aggWin_median<-aggregate(aggDf$n_og  ,by=list(aggDf$ind_chr),zoo::rollmedia
 winL$aggWin_min   <-aggregate(aggDf$minInt,by=list(aggDf$ind_chr),function(x,k){zoo::rollapply(x,width=k,FUN=min)},k=5)
 winL$aggWin_max   <-aggregate(aggDf$maxInt,by=list(aggDf$ind_chr),zoo::rollmax   ,k=5)
 
-#Save data
-save.image(file = opt$imageFile)
-
 #Assemble aggregated values into a data.frame
 winDf <- data.frame(
-  mean  = do.call("c",aggWin_mean$x  ),
-  median= do.call("c",aggWin_median$x),
-  min   = do.call("c",aggWin_min$x   ),
-  max   = do.call("c",aggWin_max$x   )
+  mean  = do.call("c",winL$aggWin_mean$x  ),
+  median= do.call("c",winL$aggWin_median$x),
+  min   = do.call("c",winL$aggWin_min$x   ),
+  max   = do.call("c",winL$aggWin_max$x   )
 )
+winDf$ind_chr <- unlist(mapply(function(x,y){rep(x,length(y))},x=winL$aggWin_mean$Group.1,y=winL$aggWin_mean$x))
+winDf$id  <- gsub("(^.*)_(.*$)","\\1",gsub("_scaffold","",winDf$ind_chr))
+winDf$chr <- gsub("(^.*)_(.*$)","\\2",winDf$ind_chr)
 
-i      <- as.vector(sapply(1:nrow(aggWin_mean),rep,times=length(aggWin_mean$x[[1]])))
-ind_chr<- as.vector(sapply(aggWin_mean$Group.1,rep,times=length(aggWin_mean$x[[1]])))
-id     <- gsub("(^.*)_(.*$)","\\1",winDf$ind_chr)
-chr    <- gsub("(^.*)_(.*$)","\\2",winDf$ind_chr)
+#Save data
+save.image(file = opt$imageFile)
 
 #Write to a file
 write.csv(winDf,opt$winDfFile)
