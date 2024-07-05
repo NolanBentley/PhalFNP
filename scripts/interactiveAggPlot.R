@@ -26,7 +26,9 @@ aggPlotFun <- function(plottedDf,fileVec){
       currDfSub<- currDfSub_i[currDfSub_i$chr==currChr,]
       
       #Initialize plot
-      currPlot <- ggplot(currDf,aes(IntervalMidpoint_Mbp,median))+
+      currPlot <- ggplot(currDf,aes(IntervalMidpoint_Mbp,median,
+                                    fill = ..count../length(unique(currDf$id)),
+                                    text = sprintf("Count per id: %0.5f", ..count../length(unique(currDf$id)))))+
         theme_bw()+
         guides(color="none")+
         labs(x="Interval midpoint (Mbp)\n ",y="\n Median(average read depth)")+
@@ -34,8 +36,8 @@ aggPlotFun <- function(plottedDf,fileVec){
       
       #Add hex plot
       currPlot <- currPlot +
-        geom_hex(binwidth=c(1,1))+
-        scale_fill_gradient(low = "grey90",high = "grey30",trans="log10",name = "log10(count)")
+        geom_hex(binwidth=c(0.75,0.5))+
+        scale_fill_gradient(low = "grey90",high = "grey50",name="Count\nper ID")
       
       #Annotate name
       anno <- paste0(currChr,": ",gsub("LSVPlot_|\\.html","",basename(currFile)))
@@ -44,7 +46,7 @@ aggPlotFun <- function(plottedDf,fileVec){
                  x=mean(xLims),y=yLims[2]+0*(yLims[2]-yLims[1]))
       
       #Add interactive scatterplot
-      currPlotly <- ggplotly(currPlot)
+      currPlotly <- ggplotly(currPlot,tooltip = "text")
       
       template <- paste(
         "<b>id:  </b>",currDfSub$id,"<br>",
@@ -54,6 +56,7 @@ aggPlotFun <- function(plottedDf,fileVec){
         "<b>Interval range (bp): </b>",format(currDfSub$max - currDfSub$min +1,big.mark = ","),"<br>",
         "<b>Median value: </b>",round(currDfSub$median,3)
       )
+      
       if(length(uniChr)>1){
         currPlotly <- currPlotly %>%
           add_trace(
@@ -61,6 +64,7 @@ aggPlotFun <- function(plottedDf,fileVec){
             x = currDfSub$IntervalMidpoint_Mbp,
             y = currDfSub$median,
             color=currDfSub$id,
+            fill="none",
             customdata = gsub("^\\.","/PhalFNP",currDfSub$multiLineSingleChr),
             showlegend = F,
             hovertemplate= template
@@ -72,6 +76,7 @@ aggPlotFun <- function(plottedDf,fileVec){
             x = currDfSub$IntervalMidpoint_Mbp,
             y = currDfSub$median,
             color=currDfSub$id,
+            fill="none",
             customdata = gsub("^\\.","/PhalFNP",currDfSub$singleLineMultiChr),
             showlegend = F,
             hovertemplate= template
@@ -83,6 +88,7 @@ aggPlotFun <- function(plottedDf,fileVec){
             x = currDfSub$IntervalMidpoint_Mbp,
             y = currDfSub$median,
             color=currDfSub$id,
+            fill="none",
             customdata = gsub("^\\.","/PhalFNP",currDfSub$multiLineSingleChr),
             showlegend = F,
             hovertemplate= template
