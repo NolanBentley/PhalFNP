@@ -1,5 +1,5 @@
 #### Load aggDf ####
-if(!exists("aggDf")){aggDf<-read.csv("data_ignored/secondary/plottedAggDf.csv")}
+if(!exists("aggDf")){aggDf<-read.csv("data_ignored/secondary/plottedAggDf_n.csv")}
 
 #### Build index ####
 index <- c(

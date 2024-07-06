@@ -87,11 +87,11 @@ aggDf$IntervalRange_bp <- aggDf$max-aggDf$min+1
 aggDf <- aggDf[order(aggDf$chr_orig,aggDf$chr,aggDf$idNumBuffered,aggDf$min),]
 
 ### testing plots
-testDf <- aggDf[aggDf$id%in%c("phal_FIL20_020_H_M2_1",aggDf$id[which.max(aggDf$median)]),]
-aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineSingleChr)
-aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineSingleChr)
-aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineMultiChr)
-aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineMultiChr)
+#testDf <- aggDf[aggDf$id%in%c("phal_FIL20_020_H_M2_1",aggDf$id[which.max(aggDf$median)]),]
+#aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineSingleChr)
+#aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineSingleChr)
+#aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineMultiChr)
+#aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineMultiChr)
 
 ##### Load gene data ####
 geneDf <- read.delim("data_ignored/primary/assembly/Phallii_590_v3.2.gene.gff3",header = F,skip = 3)
@@ -105,7 +105,7 @@ geneDf$x   [geneDf$strand=="-"]<- geneDf$end  [geneDf$strand=="-"]
 geneDf$xend[geneDf$strand=="-"]<- geneDf$start[geneDf$strand=="-"]
 geneDf$overlaps1 <- c(F,geneDf$end[1:(length(geneDf$end)-1)]>geneDf$start[2:(length(geneDf$start))])
 geneDf$y <- cumsum(geneDf$overlaps1)
-geneDf$y_local <- zoo::rollmean(geneDf$y,k = 5,fill = "extend")
+geneDf$y_local <- zoo::rollmean(geneDf$y,k = 7,fill = "extend")
 geneDf$yOffset <- (geneDf$y-geneDf$y_local)/10
 hist(geneDf$yOffset,100)
 
