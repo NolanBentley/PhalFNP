@@ -1,4 +1,6 @@
 #### Load aggDf ####
+wd <- "~/Experiments/PhalFNP/"
+setwd(wd)
 if(!exists("aggDf")){aggDf<-read.csv("data_ignored/secondary/plottedAggDf_n.csv")}
 
 #### Build index ####
@@ -52,3 +54,21 @@ index_built <- c(
   index[index_endBody:length(index)]
 )
 write(index_built,"index.html")
+
+#Make the position html files
+posHtmlFiles <- unique(basename(index_added[htmlPos]))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
