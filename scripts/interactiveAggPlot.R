@@ -80,7 +80,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
         "<b>Median value: </b>",round(currDfSub$median,3)
       )
       
-      if(length(uniChr)>1){
+      if(length(uniChr)>1&length(unique(currDfSub_i$id))>1){
         #Multi chr plot
         currPlotly <- currPlotly %>%
           add_trace(
@@ -90,6 +90,18 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
             color=currDfSub$id,
             fill="none",
             customdata = gsub("^\\.","/PhalFNP",currDfSub$multiLineSingleChr),
+            showlegend = F,
+            hovertemplate= template
+          )
+      }else if(length(uniChr)>1&length(unique(currDfSub_i$id))==1){
+        currPlotly <- currPlotly %>%
+          add_trace(
+            type="scatter",mode = "markers",
+            x = currDfSub$IntervalMidpoint_Mbp,
+            y = currDfSub$median,
+            color=currDfSub$id,
+            fill="none",
+            customdata = gsub("^\\.","/PhalFNP",currDfSub$singleLineSingleChr),
             showlegend = F,
             hovertemplate= template
           )
@@ -146,7 +158,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
     
     #Save output
     dir.create(dirname(currFile),recursive = T,showWarnings = F)
-    saveWidget(currPlotly,file = currFile,selfcontained = T)
+    saveWidget(currPlotly,file = currFile,selfcontained = F)
     print(paste0(currFile," (",i," of ", length(uniFiles),")"))
   }
 }

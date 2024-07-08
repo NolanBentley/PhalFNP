@@ -115,16 +115,8 @@ aggPlotFun(aggDf,aggDf$multiLineMultiChr,geneDf)
 ### Multi-line single-chromosome plots ###
 aggPlotFun(aggDf,aggDf$multiLineSingleChr,geneDf)
 
-### Single-line multi-chromosome plots ###
-aggPlotFun(aggDf,aggDf$singleLineMultiChr)
-
-### Single-line single-chromosome plots ###
-#aggPlotFun(aggDf,aggDf$singleLineSingleChr)
-
-#### Save aggDf ####
-write.csv(aggDf,"data_ignored/secondary/plottedAggDf_n.csv")
-
 #### Making summary values ####
+aggDf_presub <- aggDf
 aggDf_presub<- aggDf_presub[order(aggDf_presub$id,aggDf_presub$chr,aggDf_presub$min),]
 aggDf_presub$div <- aggDf_presub$median<min(cutoffs)|aggDf_presub$median>max(cutoffs)
 
@@ -152,8 +144,19 @@ paste0("Of Id+chr combos (no scaffolds): ",sum(win5Max$x>=5)," (",round(mean(win
 win5Max <- aggregate(aggDf_noScaffold$Win5Sum,by=list(aggDf_noScaffold$id),max)
 paste0("Of Ids: ",sum(win5Max$x>=5)," (",round(mean(win5Max$x>=5)*100,2),"% of ",nrow(win5Max)," combos)")
 
+### I can't them all on the website
+aggDf_sub  <- aggDf[aggDf$id     %in%(aggDf$id     [aggDf$hasDivergentMedian])&aggDf$chrLogic,]
+aggDf_sub2 <- aggDf[aggDf$ind_chr%in%(aggDf$ind_chr[aggDf$hasDivergentMedian])&aggDf$chrLogic,]
+
+### Single-line single-chromosome plots ###
+aggPlotFun(aggDf_sub2,aggDf_sub2$singleLineSingleChr,geneDf)
+
+### Single-line multi-chromosome plots ###
+aggPlotFun(aggDf_sub,aggDf_sub$singleLineMultiChr,geneDf)  
 
 
+#### Save aggDf ####
+write.csv(aggDf,"data_ignored/secondary/plottedAggDf_n.csv")
 
 
 
