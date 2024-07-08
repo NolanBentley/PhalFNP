@@ -16,16 +16,14 @@ index <- c(
   '<b>Hexagons:</b> the frequency of bins of position and normalized-coverage across the population being visualized.<br>',
   '<b>Points:</b> the normalized-coverage for specific samples subset to only the intervals where the absolute value of the y-axis exceeds certain cutoffs.',
   
-  '<br><br>The y-axis is calculated from the median value across 5 intervals. ',
-  'Each interval is summarized by the normalized mean read depth across a 2.5-5kb range of positions excluding positions with 0 depth. ',
-  '<br>Each mean read depth has been tranformed by: ',
-  '<b>first)</b> subtracting the median mean read depth across that sample. ',
-  '<b>second)</b> dividing by the sample\'s mad.',
-  '<b>third)</b> substracting by the loci\'s median normalized value.',
+  '<br><br>The y-axis is calculated from the median coverage transformed into estimated ploidy across 5 intervals. ',
+  'Each interval summarizes the mean read depth across a 2.5-5kb range of positions excluding positions with 0 depth. ',
+  '<br>The coverage has been transformed to estimate copy-number by multiplying by 2 and dividing by the peak value.',
   '</p>','</body>','</html>'
 )
 index_endBody <- which(trimws(index)=="</body>")
-singleLineBinPages <- paste0("./depthImages/singleLineIndexes/",sort(unique(aggDf$idNum_bin)),".html")
+aggDf$singleLineBinPages <- paste0("./depthImages/singleLineIndexes/",aggDf$idNum_bin,".html")
+singleLineBinPages <-sort(unique(aggDf$singleLineBinPages))
 index_added <- c(
   "<br><br><b><u>multi-sample multi-chromosome plots</b></u>",
   "<br>Clicking on points in these plots will take you to that chromosome's multi-sample plot.",
@@ -33,11 +31,11 @@ index_added <- c(
   "<ul>",
   sort(unique(aggDf$multiLineMultiChr)),
   "</ul><br><br><b><u>multi-sample single-chromosome plots</b></u>",
-  "<br>Clicking on points in these plots will take you to that sample's single-chromosome plot (see next section)",
+  "<br>Clicking on points in these plots will take you to that sample's multi-chromosome plot. Clicking on those points will take you to the single-chromosome plot for that line.",
   "<ul>",
   sort(unique(aggDf$multiLineSingleChr)),
   "</ul><br><br><b><u>Single line plots</b></u>",
-  "This section is still under development. This section takes you to single-sample plots based on the sample ID.",
+  "This section takes you to single-sample plots based on the sample ID.",
   "<ul>",
   singleLineBinPages,"</ul>"
 )
@@ -56,7 +54,45 @@ index_built <- c(
 write(index_built,"index.html")
 
 #Make the position html files
-posHtmlFiles <- unique(basename(index_added[htmlPos]))
+posHtmlFiles <- unique(index_added[htmlPos])
+posHtmlFiles <- posHtmlFiles[grep("Lines",posHtmlFiles)]
+dir.create(dirname(posHtmlFiles[1]),showWarnings = F)
+i<-1
+for(i in 1:length(posHtmlFiles)){
+  index <- c(
+    '<!DOCTYPE html>','<html>','<head>','<title>',
+    basename(posHtmlFiles),
+    '</title>','</head>','<body>','<h1>',
+    'Welcome to the large variant explorer for ',basename(posHtmlFiles),
+    '</h1>','<p>',
+    '</p>','</body>','</html>'
+  )
+  index_endBody <- which(trimws(index)=="</body>")
+  currRows <- aggDf$singleLineBinPages == posHtmlFiles[i]
+  index_added <- c(
+    "<br><br><b><u>single-sample multi-chromosome plots</b></u>",
+    "<br>Clicking on points in these plots will take you to that chromosome's single-sample plot.",
+    "<ul>",
+    sort(unique(aggDf$singleLineMultiChr[currRows])),
+    "</ul><br><br><b><u>single-sample single-chromosome plots</b></u>",
+    "<br>Clicking on points in these plots will take you to that sample's multi-chromosome plot. Clicking on those points will take you to the single-chromosome plot for that line.",
+    "<ul>",
+    sort(unique(aggDf$singleLineSingleChr[currRows]))
+  )
+  htmlPos <-grep("html",index_added)
+  index_mod <- index_added
+  index_mod[htmlPos] <- paste0('<li><a href="',
+                               gsub("^\\.","/PhalFNP",index_added[htmlPos]),
+                               '">',basename(index_added[htmlPos]),
+                               "</a></li>"
+  )
+  index_built <- c(
+    index[1:(index_endBody-1)],
+    index_mod,
+    index[index_endBody:length(index)]
+  )
+  write(index_built,posHtmlFiles[i])
+}
 
 
 
