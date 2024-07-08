@@ -94,20 +94,7 @@ aggDf <- aggDf[order(aggDf$chr_orig,aggDf$chr,aggDf$idNumBuffered,aggDf$min),]
 #aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineMultiChr)
 
 ##### Load gene data ####
-geneDf <- read.delim("data_ignored/primary/assembly/Phallii_590_v3.2.gene.gff3",header = F,skip = 3)
-colnames(geneDf)<-c("seqid","source","type","start","end","score","strand","phase","attributes")
-geneDf<-geneDf[geneDf$type=="gene",]
-geneDf$seqid<-gsub("scaffold_","",geneDf$seqid)
-unique(geneDf$seqid)
-geneDf$x   <- geneDf$start
-geneDf$xend<- geneDf$end
-geneDf$x   [geneDf$strand=="-"]<- geneDf$end  [geneDf$strand=="-"]
-geneDf$xend[geneDf$strand=="-"]<- geneDf$start[geneDf$strand=="-"]
-geneDf$overlaps1 <- c(F,geneDf$end[1:(length(geneDf$end)-1)]>geneDf$start[2:(length(geneDf$start))])
-geneDf$y <- cumsum(geneDf$overlaps1)
-geneDf$y_local <- zoo::rollmean(geneDf$y,k = 7,fill = "extend")
-geneDf$yOffset <- (geneDf$y-geneDf$y_local)/10
-hist(geneDf$yOffset,100)
+geneDf <- read.csv("data/geneDf.csv")
 
 ##### Everything plot ####
 aggPlotFun(aggDf,aggDf$multiLineMultiChr,geneDf)
@@ -145,13 +132,13 @@ win5Max <- aggregate(aggDf_noScaffold$Win5Sum,by=list(aggDf_noScaffold$id),max)
 paste0("Of Ids: ",sum(win5Max$x>=5)," (",round(mean(win5Max$x>=5)*100,2),"% of ",nrow(win5Max)," combos)")
 
 ### I can't them all on the website
-aggDf_sub  <- aggDf[aggDf$id     %in%(aggDf$id     [aggDf$hasDivergentMedian])&aggDf$chrLogic,]
-aggDf_sub2 <- aggDf[aggDf$ind_chr%in%(aggDf$ind_chr[aggDf$hasDivergentMedian])&aggDf$chrLogic,]
+#aggDf_sub2 <- aggDf[aggDf$ind_chr%in%(aggDf$ind_chr[aggDf$hasDivergentMedian])&aggDf$chrLogic,]
 
 ### Single-line single-chromosome plots ###
-aggPlotFun(aggDf_sub2,aggDf_sub2$singleLineSingleChr,geneDf)
+aggPlotFun(aggDf,aggDf$singleLineSingleChr,geneDf)
 
 ### Single-line multi-chromosome plots ###
+aggDf_sub  <- aggDf[aggDf$id     %in%(aggDf$id     [aggDf$hasDivergentMedian])&aggDf$chrLogic,]
 aggPlotFun(aggDf_sub,aggDf_sub$singleLineMultiChr,geneDf)  
 
 
