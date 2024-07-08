@@ -96,15 +96,13 @@ for(i in 1:length(posHtmlFiles)){
 
 #Fix page titles
 htmlFiles <- list.files("depthImages/",pattern = "html$",full.names = T,recursive = T)
-x <- htmlFiles[1]
 replacePlotlyTitles <- function(x){
   currHtml <- readLines(x)
-  titlerow<- grep("\\<title\\>plotly\\.*title\\>$",currHtml)
+  titlerow<- grep("^ *.title.plotly..title.$",currHtml)
   if(length(titlerow)>0){
     currHtml[titlerow[1]]<-paste0("<title>",basename(x),"</title>")
     write(currHtml,file = x)
   }
-  print(x)
 }
 sapply(htmlFiles,replacePlotlyTitles)
 
