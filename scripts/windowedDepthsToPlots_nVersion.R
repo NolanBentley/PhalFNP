@@ -78,7 +78,7 @@ aggDf$scaffoldOrChr       <- gsub("Chr.*","Chr",aggDf$chr)
 aggDf$multiLineMultiChr   <- paste0(outDir,"multiChr/LSVPlot_", aggName,"_",aggDf$scaffoldOrChr,".html")
 aggDf$multiLineSingleChr  <- paste0(outDir,"singleChr/LSVPlot_",aggName,"_",aggDf$chr,          ".html")
 aggDf$singleLineMultiChr  <- paste0(outDir,"multiChr/",aggDf$idNum_bi,"/LSVPlot_",aggName,"_",aggDf$id,".html")
-aggDf$singleLineSingleChr <- paste0(outDir,"singleChr/singleLine_",aggDf$chr,"/",aggDf$idNum_bi,"/LSVPlot_",aggName,"_",aggDf$chr,"_",aggDf$id,".html")
+aggDf$singleLineSingleChr <- paste0(outDir,"singleChr/singleLine_",aggDf$chr,"/",aggDf$idNum_bi,"/LSVPlot_",aggName,"_",c("","scaffold")[(aggDf$chr=="scaffold")+1],aggDf$chr_orig,"_",aggDf$id,".html")
 
 #### Plots #####
 ##### Add values for plots ####
@@ -86,21 +86,32 @@ aggDf$IntervalMidpoint_Mbp <- (aggDf$max+aggDf$min)/2000000
 aggDf$IntervalRange_bp <- aggDf$max-aggDf$min+1
 aggDf <- aggDf[order(aggDf$chr_orig,aggDf$chr,aggDf$idNumBuffered,aggDf$min),]
 
+##### Load gene data ####
+geneDf <- read.csv("data/geneDf.csv")
+
 ### testing plots
 #testDf <- aggDf[aggDf$id%in%c("phal_FIL20_020_H_M2_1",aggDf$id[which.max(aggDf$median)]),]
-#aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineSingleChr)
+#aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineSingleChr,geneDf)
 #aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineSingleChr)
 #aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineMultiChr)
 #aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineMultiChr)
 
-##### Load gene data ####
-geneDf <- read.csv("data/geneDf.csv")
 
 ##### Everything plot ####
 aggPlotFun(aggDf,aggDf$multiLineMultiChr,geneDf)
 
 ### Multi-line single-chromosome plots ###
 aggPlotFun(aggDf,aggDf$multiLineSingleChr,geneDf)
+
+### Single-line single-chromosome plots ###
+aggPlotFun(aggDf,aggDf$singleLineSingleChr,geneDf)
+
+### Single-line multi-chromosome plots ###
+aggDf_sub  <- aggDf[aggDf$id     %in%(aggDf$id     [aggDf$hasDivergentMedian])&aggDf$chrLogic,]
+aggPlotFun(aggDf_sub,aggDf_sub$singleLineMultiChr,geneDf)  
+
+#### Save aggDf ####
+write.csv(aggDf,"data_ignored/secondary/plottedAggDf_n.csv")
 
 #### Making summary values ####
 aggDf_presub <- aggDf
@@ -116,36 +127,22 @@ aggDf_presub$Win3Sum <- aggDf_presub$divMinus1 + aggDf_presub$div +  aggDf_presu
 aggDf_presub$Win5Sum <- aggDf_presub$divMinus1 + aggDf_presub$div +  aggDf_presub$divPlus1 + aggDf_presub$divMinus2 + aggDf_presub$divPlus2
 
 win3Max <- aggregate(aggDf_presub$Win3Sum,by=list(aggDf_presub$id_seq),max)
-paste0("Of Id+Seq combos: ",sum(win3Max$x>=3)," (",round(mean(win3Max$x>=3)*100,2),"% of ",nrow(win3Max)," combos)")
+out <- c(paste0("Of Id+Seq combos: ",sum(win3Max$x>=3)," (",round(mean(win3Max$x>=3)*100,2),"% of ",nrow(win3Max)," combos)"))
 aggDf_noScaffold <- aggDf_presub[aggDf_presub$chrLogic,]
 win3Max <- aggregate(aggDf_noScaffold$Win3Sum,by=list(aggDf_noScaffold$id_seq),max)
-paste0("Of Id+chr combos (no scaffolds): ",sum(win3Max$x>=3)," (",round(mean(win3Max$x>=3)*100,2),"% of ",nrow(win3Max)," combos)")
+out <- c(out,paste0("Of Id+chr combos (no scaffolds): ",sum(win3Max$x>=3)," (",round(mean(win3Max$x>=3)*100,2),"% of ",nrow(win3Max)," combos)"))
 win3Max <- aggregate(aggDf_noScaffold$Win3Sum,by=list(aggDf_noScaffold$id),max)
-paste0("Of Ids: ",sum(win3Max$x>=3)," (",round(mean(win3Max$x>=3)*100,2),"% of ",nrow(win3Max)," combos)")
+out <- c(out,paste0("Of Ids: ",sum(win3Max$x>=3)," (",round(mean(win3Max$x>=3)*100,2),"% of ",nrow(win3Max)," combos)"))
 
 win5Max <- aggregate(aggDf_presub$Win5Sum,by=list(aggDf_presub$id_seq),max)
-paste0("Of Id+Seq combos: ",sum(win5Max$x>=5)," (",round(mean(win5Max$x>=5)*100,2),"% of ",nrow(win5Max)," combos)")
+out <- c(out,paste0("Of Id+Seq combos: ",sum(win5Max$x>=5)," (",round(mean(win5Max$x>=5)*100,2),"% of ",nrow(win5Max)," combos)"))
 aggDf_noScaffold <- aggDf_presub[aggDf_presub$chrLogic,]
 win5Max <- aggregate(aggDf_noScaffold$Win5Sum,by=list(aggDf_noScaffold$id_seq),max)
-paste0("Of Id+chr combos (no scaffolds): ",sum(win5Max$x>=5)," (",round(mean(win5Max$x>=5)*100,2),"% of ",nrow(win5Max)," combos)")
+out <- c(out,paste0("Of Id+chr combos (no scaffolds): ",sum(win5Max$x>=5)," (",round(mean(win5Max$x>=5)*100,2),"% of ",nrow(win5Max)," combos)"))
 win5Max <- aggregate(aggDf_noScaffold$Win5Sum,by=list(aggDf_noScaffold$id),max)
-paste0("Of Ids: ",sum(win5Max$x>=5)," (",round(mean(win5Max$x>=5)*100,2),"% of ",nrow(win5Max)," combos)")
+out <- c(out,paste0("Of Ids: ",sum(win5Max$x>=5)," (",round(mean(win5Max$x>=5)*100,2),"% of ",nrow(win5Max)," combos)"))
 
-### I can't them all on the website
-#aggDf_sub2 <- aggDf[aggDf$ind_chr%in%(aggDf$ind_chr[aggDf$hasDivergentMedian])&aggDf$chrLogic,]
-
-### Single-line single-chromosome plots ###
-aggPlotFun(aggDf,aggDf$singleLineSingleChr,geneDf)
-
-### Single-line multi-chromosome plots ###
-aggDf_sub  <- aggDf[aggDf$id     %in%(aggDf$id     [aggDf$hasDivergentMedian])&aggDf$chrLogic,]
-aggPlotFun(aggDf_sub,aggDf_sub$singleLineMultiChr,geneDf)  
-
-
-#### Save aggDf ####
-write.csv(aggDf,"data_ignored/secondary/plottedAggDf_n.csv")
-
-
+write(out,file = "data/plotsummaryvalues.csv")
 
 
 

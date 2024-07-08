@@ -16,18 +16,30 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
   genes$chr<-genes$seqid
   genes$yOffset <- genes$yOffset - min(genes$yOffset)
   
+  i<-7
   for(i in 1:length(uniFiles)){
     currFile  <- uniFiles[i]
     currDf_i    <- plottedDf   [fileVec   ==currFile,]
-    currDf_i$id <- as.factor(currDf_i$id)
     currDfSub_i <- plottedDfSub[fileVecSub==currFile,]
+    uniChr    <- unique(plottedDf$chr[fileVec==currFile])
+    
+    #Modify if scaffold
+    if(length(uniChr)&uniChr[1]=="scaffold"){
+      currDf_i$chr      <- currDf_i$chr_orig
+      currDfSub_i$chr   <- currDfSub_i$chr_orig
+      uniChr            <- unique(plottedDf$chr_orig[fileVec==currFile])
+    }
+    
+    #Modify for plotting
+    currDf_i$id    <- as.factor(currDf_i$id)
     currDfSub_i$id <- factor(currDfSub_i$id,levels=levels(currDf_i$id))
     
-    uniChr    <- unique(plottedDf$chr[fileVec==currFile])
     xLims <- c(min(c(0,currDf_i$IntervalMidpoint_Mbp)),max(currDf_i$IntervalMidpoint_Mbp))
     yLims <- c(min(c(0,currDf_i$median)),max(c(currDf_i$median)+0.1*(max(currDf_i$median)-min(currDf_i$median)),8))
+    
+    j<-1
     for(j in 1:length(uniChr)){
-      currChr  <-uniChr[j]
+      currChr  <- uniChr[j]
       currDf   <- currDf_i   [currDf_i$chr==currChr   ,]
       currDfSub<- currDfSub_i[currDfSub_i$chr==currChr,]
       
@@ -51,15 +63,14 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
       
       #If only one chromosome, add in genes
       if(length(uniChr)==1){
-        currPlot <- currPlot+geom_segment(
-          data = genes[genes$seqid%in%currChr,],
-          mapping = aes(x=x/1000000,xend=xend/1000000,y=yOffset,yend=yOffset,fill=NULL,text=attributes),
-          color="black"
-        )+ geom_point(
-          data = genes[genes$seqid%in%currChr,],
-          mapping = aes(x=x/1000000,y=yOffset,fill=NULL,text=attributes),
-          arrow = arrow(length=unit(0.001,"cm")),color="black"
-        )
+        currGenes <- genes[genes$seqid%in%currChr,]
+        if(nrow(currGenes)>0){
+          currPlot <- currPlot+geom_segment(
+            data = currGenes,
+            mapping = aes(x=x/1000000,xend=xend/1000000,y=yOffset,yend=yOffset,fill=NULL,text=attributes,customdata=link),
+            color="black"
+          )
+        }
       }
       
       #Annotate name
@@ -94,6 +105,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
             hovertemplate= template
           )
       }else if(length(uniChr)>1&length(unique(currDfSub_i$id))==1){
+        #Muti chr single line plot
         currPlotly <- currPlotly %>%
           add_trace(
             type="scatter",mode = "markers",
@@ -104,32 +116,32 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
             customdata = gsub("^\\.","/PhalFNP",currDfSub$singleLineSingleChr),
             showlegend = F,
             hovertemplate= template
-          )
+          ) 
       }else if(length(unique(currDfSub_i$id))>1){
         #Single chr multi line plot
         currPlotly <- currPlotly %>%
           add_trace(
             type="scatter",mode = "markers",
-            x = currDfSub$IntervalMidpoint_Mbp,
-            y = currDfSub$median,
-            color=currDfSub$id,
+            x = c(currDfSub$IntervalMidpoint_Mbp,currGenes$x/1000000),
+            y = c(currDfSub$median,currGenes$yOffset),
+            color=as.factor(c(as.numeric(currDfSub$id)+1,rep(1,nrow(currGenes)))),
             fill="none",
-            customdata = gsub("^\\.","/PhalFNP",currDfSub$singleLineMultiChr),
+            customdata = c(gsub("^\\.","/PhalFNP",currDfSub$singleLineMultiChr),currGenes$link),
             showlegend = F,
-            hovertemplate= template
+            hovertemplate= c(template,currGenes$attributes)
           )
       }else{
         #Single chr single line plot
         currPlotly <- currPlotly %>%
           add_trace(
             type="scatter",mode = "markers",
-            x = currDfSub$IntervalMidpoint_Mbp,
-            y = currDfSub$median,
-            color=currDfSub$id,
+            x = c(currDfSub$IntervalMidpoint_Mbp,currGenes$x/1000000),
+            y = c(currDfSub$median,currGenes$yOffset),
+            color=as.factor(c(as.numeric(currDfSub$id)+1,rep(1,nrow(currGenes)))),
             fill="none",
-            customdata = gsub("^\\.","/PhalFNP",currDfSub$multiLineSingleChr),
+            customdata = c(gsub("^\\.","/PhalFNP",currDfSub$multiLineSingleChr),currGenes$link),
             showlegend = F,
-            hovertemplate= template
+            hovertemplate= c(template,currGenes$attributes)
           )
       }
         
@@ -158,7 +170,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
     
     #Save output
     dir.create(dirname(currFile),recursive = T,showWarnings = F)
-    saveWidget(currPlotly,file = currFile,selfcontained = F)
+    saveWidget(currPlotly,file = currFile,selfcontained = F,title = gsub("LSVPlot_5x5Kbx40Kb_","",basename(currFile)))
     print(paste0(currFile," (",i," of ", length(uniFiles),")"))
   }
 }

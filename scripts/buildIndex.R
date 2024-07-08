@@ -95,6 +95,8 @@ for(i in 1:length(posHtmlFiles)){
 }
 
 #Fix page titles
+## Deprecated
+'
 htmlFiles <- list.files("depthImages/",pattern = "html$",full.names = T,recursive = T)
 replacePlotlyTitles <- function(x){
   currHtml <- readLines(x)
@@ -108,6 +110,7 @@ sapply(htmlFiles,replacePlotlyTitles)
 
 #Add gene link
 geneDf <- read.csv("data/geneDf.csv")
+'
 
 
 
