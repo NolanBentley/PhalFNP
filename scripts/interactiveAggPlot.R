@@ -15,6 +15,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
   #Load gene data
   genes$chr<-genes$seqid
   genes$yOffset <- genes$yOffset - min(genes$yOffset)
+  genes$yOffset <- -genes$yOffset- 0.05
   
   i<-7
   for(i in 1:length(uniFiles)){

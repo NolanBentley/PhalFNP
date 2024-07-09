@@ -103,12 +103,13 @@ aggPlotFun(aggDf,aggDf$multiLineMultiChr,geneDf)
 ### Multi-line single-chromosome plots ###
 aggPlotFun(aggDf,aggDf$multiLineSingleChr,geneDf)
 
-### Single-line single-chromosome plots ###
-aggPlotFun(aggDf,aggDf$singleLineSingleChr,geneDf)
-
 ### Single-line multi-chromosome plots ###
-aggDf_sub  <- aggDf[aggDf$id     %in%(aggDf$id     [aggDf$hasDivergentMedian])&aggDf$chrLogic,]
+aggDf_sub  <- aggDf[aggDf$id %in%(aggDf$id[aggDf$hasDivergentMedian])&aggDf$chrLogic,]
 aggPlotFun(aggDf_sub,aggDf_sub$singleLineMultiChr,geneDf)  
+
+### Single-line single-chromosome plots ###
+aggDf_sub2 <-aggDf[aggDf$id_seq %in%(aggDf$id_seq[aggDf$hasDivergentMedian]),]
+aggPlotFun(aggDf_sub2,aggDf_sub2$singleLineSingleChr,geneDf)
 
 #### Save aggDf ####
 write.csv(aggDf,"data_ignored/secondary/plottedAggDf_n.csv")
