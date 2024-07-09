@@ -90,11 +90,11 @@ aggDf <- aggDf[order(aggDf$chr_orig,aggDf$chr,aggDf$idNumBuffered,aggDf$min),]
 geneDf <- read.csv("data/geneDf.csv")
 
 ### testing plots
-testDf <- aggDf[aggDf$id%in%c("phal_FIL20_020_H_M2_1",aggDf$id[which.max(aggDf$median)]),]
-aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineSingleChr,geneDf)
-aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineSingleChr,geneDf)
-aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineMultiChr,geneDf)
-aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineMultiChr,geneDf)
+#testDf <- aggDf[aggDf$id%in%c("phal_FIL20_020_H_M2_1",aggDf$id[which.max(aggDf$median)]),]
+#aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineSingleChr,geneDf)
+#aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineSingleChr,geneDf)
+#aggPlotFun(plottedDf = testDf,fileVec = testDf$multiLineMultiChr,geneDf)
+#aggPlotFun(plottedDf = testDf,fileVec = testDf$singleLineMultiChr,geneDf)
 
 
 ##### Everything plot ####

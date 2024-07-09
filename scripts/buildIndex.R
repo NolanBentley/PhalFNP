@@ -2,6 +2,7 @@
 wd <- "~/Experiments/PhalFNP/"
 setwd(wd)
 if(!exists("aggDf")){aggDf<-read.csv("data_ignored/secondary/plottedAggDf_n.csv")}
+aggDf_og <-aggDf
 aggDf<-aggDf[aggDf$chrLogic,]
 
 #### Build index ####

@@ -23,7 +23,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
   #Load gene data
   genes$chr<-genes$seqid
   genes$yOffset <- genes$yOffset - min(genes$yOffset)
-  genes$yOffset <- -genes$yOffset- 0.05
+  genes$yOffset <- -genes$yOffset - 0.5
   
   i<-7
   for(i in 1:length(uniFiles)){
@@ -44,7 +44,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
     currDfSub_i$id <- factor(currDfSub_i$id,levels=levels(currDf_i$id))
     
     xLims <- c(min(c(0,currDf_i$IntervalMidpoint_Mbp)),max(currDf_i$IntervalMidpoint_Mbp))
-    yLims <- c(min(c(0,currDf_i$median)),max(c(currDf_i$median)+0.1*(max(currDf_i$median)-min(currDf_i$median)),8))
+    yLims <- c(min(c(0,genes$yOffset,currDf_i$median)),max(c(currDf_i$median)+0.1*(max(currDf_i$median)-min(currDf_i$median)),8))
     
     j<-1
     for(j in 1:length(uniChr)){
@@ -72,21 +72,35 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
       
       #If only one chromosome, add in genes
       if(length(uniChr)==1){
+        #Subset to genes near divergent RD regions
         currGenes <- genes[genes$seqid%in%currChr,]
-        #### Todo: add in code to remove genes outside of the main region
-        
+        intMinDist  <- 1000000
+        bufferEdges <- intMinDist
+        divPositions <- currDf[currDf$hasDivergentMedian,]
+        divPositions$breakPoints <- cumsum(c(1,diff(divPositions$min)>=intMinDist))
+        divGMin <- aggregate(divPositions$min,by=list(divPositions$breakPoints),min)
+        divGMax <- aggregate(divPositions$min,by=list(divPositions$breakPoints),max)
+        currGenes$inDivG <- FALSE
+        for(i in 1:nrow(divGMin)){
+          currGenes$checkBeforeI <-(currGenes$start+bufferEdges)>(divGMin$x[i])
+          currGenes$checkAfterI  <-(currGenes$end  -bufferEdges)<(divGMax$x[i])
+          currGenes$inDivG <- currGenes$inDivG|(currGenes$checkBeforeI&currGenes$checkAfterI)
+        }
+        currGenes<- currGenes[currGenes$inDivG,]
+        #Draw line segments
         if(nrow(currGenes)>0){
           currPlot <- currPlot+geom_segment(
             data = currGenes,
-            mapping = aes(x=x/1000000,
-                          xend=xend/1000000,
-                          y=yOffset,
-                          yend=yOffset,
-                          fill=NULL,
-                          text=NULL),
+            mapping = aes(x=x,xend=xend,y=yOffset,yend=yOffset,fill=NULL,text=NULL),
             color="black"
           )
         }
+        #Build hovertext
+        currGenes$hoverText <- paste0(
+          "<b>id:  </b>",currGenes$id," (",currGenes$strand," strand)","<br>",
+          "<b>chr_range: </b>",trimws(currGenes$seqid),"_",format(currGenes$start,big.mark = ","),"-",format(currGenes$end,big.mark = ","),"<br>",
+          "<b>other attributes:</br></b>",gsub(";","<br>",trimws(currGenes$attributes))
+        )
       }
       
       #Annotate name
@@ -138,26 +152,26 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
         currPlotly <- currPlotly %>%
           add_trace(
             type="scatter",mode = "markers",
-            x = c(currDfSub$IntervalMidpoint_Mbp,currGenes$x/1000000),
+            x = c(currDfSub$IntervalMidpoint_Mbp,currGenes$x),
             y = c(currDfSub$median,currGenes$yOffset),
             color=as.factor(c(as.numeric(currDfSub$id)+1,rep(1,nrow(currGenes)))),
             fill="none",
             customdata = c(gsub("^\\.","/PhalFNP",currDfSub$singleLineMultiChr),currGenes$link),
             showlegend = F,
-            hovertemplate= c(template,currGenes$attributes)
+            hovertemplate= c(template,currGenes$hoverText)
           )
       }else{
         #Single chr single line plot
         currPlotly <- currPlotly %>%
           add_trace(
             type="scatter",mode = "markers",
-            x = c(currDfSub$IntervalMidpoint_Mbp,currGenes$x/1000000),
+            x = c(currDfSub$IntervalMidpoint_Mbp,currGenes$x),
             y = c(currDfSub$median,currGenes$yOffset),
             color=as.factor(c(as.numeric(currDfSub$id)+1,rep(1,nrow(currGenes)))),
             fill="none",
             customdata = c(gsub("^\\.","/PhalFNP",currDfSub$multiLineSingleChr),currGenes$link),
             showlegend = F,
-            hovertemplate= c(template,currGenes$attributes)
+            hovertemplate= c(template,currGenes$hoverText)
           )
       }
         
