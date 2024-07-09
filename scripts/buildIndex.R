@@ -7,13 +7,13 @@ aggDf<-aggDf[aggDf$chrLogic,]
 #### Build index ####
 index <- c(
   '<!DOCTYPE html>','<html>','<head>','<title>',
-  '<i>Panicum hallii</i> fast-neutron population large structural variant explorer',
+  'Panicum hallii fast-neutron population large structural variant explorer',
   '</title>','</head>','<body>','<h1>',
   'Welcome to the large variant explorer!',
   '</h1>','<p>',
-  'This website houses interactive plots for exploring coverage-based variants from the P. hal FNP.',
+  'This website houses interactive plots for exploring coverage-based variants from the <i>P. hal</i> FNP.',
   
-  '<br><br>As of 7/4/2024, this data visualizes two primary statistics; <br>',
+  '<br><br>This data visualizes two primary statistics; <br>',
   '<b>Hexagons:</b> the frequency of bins of position and normalized-coverage across the population being visualized.<br>',
   '<b>Points:</b> the normalized-coverage for specific samples subset to only the intervals where the absolute value of the y-axis exceeds certain cutoffs.',
   

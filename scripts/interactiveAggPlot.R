@@ -5,6 +5,14 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
   library(plotly)
   library(htmlwidgets)
   
+  #Simplify
+  plottedDf$IntervalMidpoint_Mbp <-round(plottedDf$IntervalMidpoint_Mbp,7)
+  plottedDf$median <-round(plottedDf$median,3)
+  genes$x   <-round(genes$x/1000000,6)
+  genes$xend<-round(genes$xend/1000000,6)
+  genes$y   <-round(genes$yOffset,6)
+  genes$yend<-round(genes$yOffset,6)
+  
   #Make a subset of interactive points
   fileVecSub   <- fileVec  [plottedDf$hasDivergentMedian ]
   plottedDfSub <- plottedDf[plottedDf$hasDivergentMedian,]
@@ -46,8 +54,8 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
       
       #Initialize plot
       currPlot <- ggplot(currDf,aes(IntervalMidpoint_Mbp,median,
-                                    fill = ..count../length(unique(currDf$id)),
-                                    text = sprintf("Count per id: %0.5f", ..count../length(unique(currDf$id)))))+
+                                    fill = round(..count../length(unique(currDf$id)),2),
+                                    text = sprintf("Count per id: %0.5f", round(..count../length(unique(currDf$id)),2))))+
         theme_bw()+
         guides(color="none")+
         labs(x="Interval midpoint (Mbp)\n ",y="\n Median(average read depth)")+
@@ -68,7 +76,12 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
         if(nrow(currGenes)>0){
           currPlot <- currPlot+geom_segment(
             data = currGenes,
-            mapping = aes(x=x/1000000,xend=xend/1000000,y=yOffset,yend=yOffset,fill=NULL,text=attributes,customdata=link),
+            mapping = aes(x=x/1000000,
+                          xend=xend/1000000,
+                          y=yOffset,
+                          yend=yOffset,
+                          fill=NULL,
+                          text=NULL),
             color="black"
           )
         }

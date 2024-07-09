@@ -1,7 +1,11 @@
-variantFile <- "~/../Box/Teaching/XPlants/FNPFiles/FNPVariants_20240626.csv"
+variantFile <- "https://utexas.box.com/shared/static/yht8ojfafsab3btuq6xe2chw8by9onfo.csv"
 df1 <- read.csv(variantFile)
 
-dfDupe<-df1[df1$id%in%(df1$id[duplicated(df1$id)]),]
+df1$analysis <- "GATK"
+df1$analysis[is.na(df1$QD)]<-"DELLY"
+df1$id      <- paste0(df1$id,":",df1$chrom,"-",df1$pos,"_",df1$ref_allele,"->",df1$alt_allele,"_",df1$analysis)
+df1$isDuped <- df1$id%in%(df1$id[duplicated(df1$id)])
+dfDupe<-df1[df1$isDuped,]
 
 uniSamples <- sort(unique(dfDupe$sample))
 samMat <- matrix(NA,nrow=length(uniSamples),ncol=length(uniSamples))
