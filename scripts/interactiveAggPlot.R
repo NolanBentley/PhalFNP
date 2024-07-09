@@ -81,10 +81,10 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
         divGMin <- aggregate(divPositions$min,by=list(divPositions$breakPoints),min)
         divGMax <- aggregate(divPositions$min,by=list(divPositions$breakPoints),max)
         currGenes$inDivG <- FALSE
-        for(i in 1:nrow(divGMin)){
-          currGenes$checkBeforeI <-(currGenes$start+bufferEdges)>(divGMin$x[i])
-          currGenes$checkAfterI  <-(currGenes$end  -bufferEdges)<(divGMax$x[i])
-          currGenes$inDivG <- currGenes$inDivG|(currGenes$checkBeforeI&currGenes$checkAfterI)
+        for(k in 1:nrow(divGMin)){
+          currGenes$checkBeforeK <-(currGenes$start+bufferEdges)>(divGMin$x[k])
+          currGenes$checkAfterK  <-(currGenes$end  -bufferEdges)<(divGMax$x[k])
+          currGenes$inDivG <- currGenes$inDivG|(currGenes$checkBeforeK&currGenes$checkAfterK)
         }
         currGenes<- currGenes[currGenes$inDivG,]
         #Draw line segments
@@ -98,16 +98,22 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
         #Build hovertext
         currGenes$hoverText <- paste0(
           "<b>id:  </b>",currGenes$id," (",currGenes$strand," strand)","<br>",
-          "<b>chr_range: </b>",trimws(currGenes$seqid),"_",format(currGenes$start,big.mark = ","),"-",format(currGenes$end,big.mark = ","),"<br>",
-          "<b>other attributes:</br></b>",gsub(";","<br>",trimws(currGenes$attributes))
+          "<b>chr_range: </b>",trimws(currGenes$seqid),"_",
+          gsub(" ","",paste0(format(currGenes$start,big.mark = ","),"-",format(currGenes$end,big.mark = ","))),
+          "<br><b>other attributes:</br></b>",gsub(";","<br>",trimws(currGenes$attributes))
         )
+        
+        #Add label
+        currPlot <- currPlot + 
+          annotate("text",label="Genes:",color="black",
+                   x=min(currGenes$x)-1.3,y=mean(currGenes$yOffset))
       }
       
       #Annotate name
       anno <- paste0(currChr,": ",gsub("LSVPlot_|\\.html","",basename(currFile)))
       currPlot <- currPlot + 
         annotate("text",label=anno,color="black",
-                 x=mean(xLims),y=yLims[2]+0*(yLims[2]-yLims[1]))
+                 x=mean(xLims),y=yLims[2]-0.1)
       
       #Add interactive scatterplot
       currPlotly <- ggplotly(currPlot,tooltip = "text")
