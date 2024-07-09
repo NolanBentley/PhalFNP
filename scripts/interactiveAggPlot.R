@@ -73,6 +73,8 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
       #If only one chromosome, add in genes
       if(length(uniChr)==1){
         currGenes <- genes[genes$seqid%in%currChr,]
+        #### Todo: add in code to remove genes outside of the main region
+        
         if(nrow(currGenes)>0){
           currPlot <- currPlot+geom_segment(
             data = currGenes,
