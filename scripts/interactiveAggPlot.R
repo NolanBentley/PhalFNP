@@ -1,4 +1,4 @@
-aggPlotFun <- function(plottedDf,fileVec,genes){
+aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 1000000){
   library(ggplot2)
   library(hexbin)
   library(ggh4x)
@@ -74,9 +74,9 @@ aggPlotFun <- function(plottedDf,fileVec,genes){
       if(length(uniChr)==1){
         #Subset to genes near divergent RD regions
         currGenes <- genes[genes$seqid%in%currChr,]
-        intMinDist  <- 1000000
         bufferEdges <- intMinDist
         divPositions <- currDf[currDf$hasDivergentMedian,]
+        divPositions <- divPositions[order(divPositions$chr_orig,divPositions$min,divPositions$max),]
         divPositions$breakPoints <- cumsum(c(1,diff(divPositions$min)>=intMinDist))
         divGMin <- aggregate(divPositions$min,by=list(divPositions$breakPoints),min)
         divGMax <- aggregate(divPositions$min,by=list(divPositions$breakPoints),max)
