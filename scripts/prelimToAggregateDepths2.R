@@ -6,7 +6,7 @@ setwd(wd)
 aggDf <- read.csv(prelimFile)
 aggDf$ind <- gsub("__.*","",basename(aggDf$X))
 aggDf$chr <- gsub("-.*","",aggDf$interval)
-aggDf$interval <- paste0(aggDf$interval,"-",gsub(" ",0,format(aggDf$minInt)))
+aggDf$interval <- paste0(aggDf$interval,"-",gsub(" ",0,format(aggDf$minInt))) ## TODO: Fix this due to inconsisent interrvals!
 aggDf$ind_chr <- paste0(aggDf$ind,"_",aggDf$chr)
 aggDf <- aggDf[order(aggDf$ind,aggDf$chr,aggDf$minInt),]
 aggDf$order <- 1:nrow(aggDf)
