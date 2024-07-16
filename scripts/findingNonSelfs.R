@@ -75,7 +75,7 @@ table(samDf$cp_logic,useNA = "ifany")
 mainText <- paste0(
   "Of the samples, ",
   sum(samDf$cp_logic)," (",round(mean(samDf$cp_logic)*100,3),"%) of ",nrow(samDf),
-  " genotypes are likely from cross-pollination"
+  " genotypes are likely cross-pollinated"
 )
 
 #Make a graphic
@@ -85,7 +85,7 @@ p1 <- ggplot(samDf,aes(lfm_hetProp,lfm_n,color=cp_logic))+
   theme_bw()+
   labs(x="Proportion of filtered variants heterozygous",
        y=paste0("Number of variants after filtering to low frequency mutations (lfm)"),
-       color="Likely outcross:",
+       color="Likely cross-pollinated:",
        title=mainText)+
   geom_vline(xintercept = hetPropCutoff,color="forestgreen")+
   geom_hline(yintercept = totCntCutoff,color="purple4")+
