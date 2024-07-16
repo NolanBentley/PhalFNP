@@ -82,7 +82,7 @@ mainText <- paste0(
 library(ggExtra)
 library(ggplot2)
 p1 <- ggplot(samDf,aes(lfm_hetProp,lfm_n,color=cp_logic))+
-  theme_bw()+
+  theme_bw()+#
   labs(x="Proportion of filtered variants heterozygous",
        y=paste0("Number of variants after filtering to low frequency mutations (lfm)"),
        color="Likely cross-pollinated:",
