@@ -1,6 +1,7 @@
 ##### Setup environent ####
 #wd
 wd <- "~/Experiments/PhalFNP/"
+coverageFile <- "data_ignored/secondary/aggDf_SampleValues.csv"
 setwd(wd)
 
 #Load data
@@ -74,10 +75,9 @@ totCntCutoff  <- 10
 samDf$cp_logic <- samDf$lfm_hetProp>=hetPropCutoff & samDf$lfm_n>=totCntCutoff
 df1$cp_logic   <- df1$sample%in%(samDf$sample[which(samDf$cp_logic)])
 table(samDf$cp_logic,useNA = "ifany")
-mainText <- paste0(
-  "Of the samples, ",
+mainText <- paste0("\n",
   sum(samDf$cp_logic)," (",round(mean(samDf$cp_logic)*100,3),"%) of ",nrow(samDf),
-  " genotypes\nare likely cross-pollinated"
+  " genotypes are likely cross-pollinated"
 )
 
 #Establish the parent of likely self-s
@@ -87,6 +87,14 @@ samDf$likelySelf <- samDf$lfm_n>=(totCntCutoff*2)&samDf$lfm_hetProp<=hetPropCuto
 samDf$father[samDf$likelySelf] <- samDf$mother[samDf$likelySelf]
 
 #Add in coverage analysis
+samCoverage <- read.csv(coverageFile)
+samCoverage$indMod <- gsub("-","_",gsub("phal_","",samCoverage$ind))
+samDf$originMod <- gsub("-","_",gsub("Fil","FIL",gsub("\\.","-",samDf$origin)))
+head(sort(samCoverage$indMod[!samCoverage$indMod%in%samDf$originMod]))
+head(sort(samDf$originMod[!samDf$originMod%in%samCoverage$indMod]))
+samCoverage$match <- match(samCoverage$indMod,samDf$originMod)
+samDf$coverage <- NA
+samDf$coverage[samCoverage$match[!is.na(samCoverage$match)]] <- samCoverage$newSamplePeakMean[!is.na(samCoverage$match)]
 
 #Make a graphic
 library(ggExtra)
@@ -95,21 +103,26 @@ library(ggplot2)
 samDf$cp_status <- "Ambiguous"
 samDf$cp_status[samDf$likelySelf]<-"Self"
 samDf$cp_status[samDf$cp_logic  ]<-"Cross"
-p1 <- ggplot(samDf,aes(lfm_hetProp,lfm_n,color=cp_status,shape=cp_status))+
+p1 <- ggplot(samDf[order(-samDf$coverage),],
+             aes(lfm_hetProp,lfm_n,fill=cp_status,size=coverage))+
   theme_bw()+#
-  labs(x="Proportion of filtered variants heterozygous",
-       y=paste0("Number of variants after filtering to low frequency mutations (lfm)"),
-       color="Parentage estimate:",
+  labs(x="Proportion of filtered variants that are heterozygous",
+       y=paste0("Number of filtered variants"),
+       fill="Parentage estimate:",
+       size="Peak coverage:",
        title=mainText)+
-  geom_vline(xintercept = c(hetPropCutoff2,hetPropCutoff),color=c("purple4","forestgreen"))+
-  geom_hline(yintercept = c(totCntCutoff*2,totCntCutoff),color=c("purple4","forestgreen"))+
-  geom_point(color="white",size=3)+
-  geom_point(alpha=0.5,size=2.5)+
-  theme(legend.position = "bottom")+
+  geom_vline(xintercept = c(hetPropCutoff2,hetPropCutoff),color=c("forestgreen","purple4"))+
+  geom_hline(yintercept = c(totCntCutoff*2,totCntCutoff),color=c("forestgreen","purple4"))+
+  geom_point(color="white",fill="white",mapping = aes(size=coverage+0.2*max(coverage,na.rm=T)))+
+  geom_point(alpha=0.5,shape=21)+
+  scale_size(range = c(0.5,4))+
   scale_y_continuous(breaks = seq(0,200,by=20))+
   scale_x_continuous(breaks = seq(0,1,by=0.1))+
-  scale_color_discrete()
-p2 <- ggMarginal(p1,type="histogram",size=5,bins=100)
+  theme(legend.position="bottom",
+        legend.box="vertical", 
+        legend.margin=margin(),
+        plot.title=element_text(hjust = 0.5,size = 10))
+p2 <- ggMarginal(p1,type="histogram",size=5,bins=100);p1
 ggsave("data/heterozygosity.png",p2,width = 88*2,height = 88*2.2,units = "mm",dpi = 600)
 
 

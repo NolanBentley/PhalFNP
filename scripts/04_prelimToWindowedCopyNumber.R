@@ -4,6 +4,7 @@ opt$wd <- "~/Experiments/PhalFNP/"
 opt$prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240625_1442.csv"
 opt$imageFile  <- "data_ignored/secondary/afterWindow.rimage"
 opt$winDfFile  <- "data_ignored/secondary/windowedNs5x.csv"
+opt$aggDfFile  <- "data_ignored/secondary/aggDf_SampleValues.csv"
 source("~/Experiments/PhalFNP/scripts/functions/peakFinding.R")
 cuL <- list() #For storing analyses
 
@@ -95,3 +96,4 @@ save.image(file = opt$imageFile)
 
 #Write to a file
 write.csv(winDf,opt$winDfFile)
+write.csv(aggDf[match(unique(aggDf$ind),aggDf$ind),],opt$aggDfFile)
