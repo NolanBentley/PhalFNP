@@ -2,10 +2,14 @@
 source("~/Experiments/PhalFNP/scripts/similarityCalc.R")
 
 ## Enable for testing
-combineWithDf1 <- F
+combineWithDf1 <- T
 
 #Simulate progeny
-for(j in 1:3){
+nPar     <- 7
+minVars  <- 10
+multBtwn <- 20
+reps     <- 5
+for(j in 1:nPar){
   if(j==1){
     dfSim <- NULL
     currRows<-0
@@ -14,18 +18,20 @@ for(j in 1:3){
   }
   dfSim <- rbind(dfSim,data.frame(
     sample=paste0("simPar",j),
-    id=paste0("simVar",(currRows+1):(currRows+1+20000*j)),
+    id=paste0("simVar",(currRows+1):(currRows+minVars+multBtwn*(j-1))),
     var_count=1
   ))
 }
+table(dfSim$sample)
 combos <- expand.grid(unique(dfSim$sample),unique(dfSim$sample))
 combos$prog <- paste0("simProg",gsub("simPar","",combos$Var1),"x",gsub("simPar","",combos$Var2))
 for(k in 1:nrow(combos)){
-  for(i in 1:2){
+  for(i in 1:reps){
     dfSim <- rbind(dfSim,makeProgeny(dfSim,combos$Var1[k],combos$Var2[k],paste0(combos$prog[k],"-",i)))
   }
 }
 dfSim <- dfSim[dfSim$var_count>0,]
+
 
 
 length(unique(dfSim$sample))
@@ -81,9 +87,8 @@ relaDf$jiSum <- mapply(function(x,y,a,b){sum(c(x,y)%in%c(a,b))},relaDf$jA,relaDf
 relaDf$ijDescriptor <- paste(relaDf$areIdentical,relaDf$iPar,relaDf$jPar,relaDf$iSelf,relaDf$jSelf,relaDf$ijSum,relaDf$jiSum,sep = ".")
 relaDf$ijDescriptor[!grepl("sim",relaDf$iSam)]<-"Unknown"
 
-descTable <- table(relaDf$ijDescriptor)
+descTable <- table(relaDf$ijDescriptor[relaDf$simRela=="Unknown"])
 cat(paste0("relaDf$comp[relaDf$ijDescriptor=='",names(descTable),"'] # ",descTable,collapse = "\n"))
-
 relaDf$comp[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.FALSE.FALSE.1.1'] # 92849
 relaDf$comp[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.FALSE.FALSE.2.2'] # 9135
 relaDf$comp[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.FALSE.TRUE.1.2'] # 9450
@@ -92,6 +97,15 @@ relaDf$comp[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.TRUE.TRUE.2.2'] # 735
 relaDf$comp[relaDf$ijDescriptor=='FALSE.TRUE.FALSE.FALSE.FALSE.1.1'] # 1260
 relaDf$comp[relaDf$ijDescriptor=='FALSE.TRUE.FALSE.FALSE.TRUE.1.2'] # 105
 
+relaDf$comp[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.FALSE.FALSE.0.0'] # 240
+relaDf$comp[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.FALSE.TRUE.0.0'] # 120
+relaDf$comp[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.TRUE.FALSE.0.0'] # 120
+relaDf$comp[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.TRUE.TRUE.0.0'] # 40
+relaDf$comp[relaDf$ijDescriptor=='FALSE.TRUE.FALSE.FALSE.FALSE.0.0'] # 120
+relaDf$comp[relaDf$ijDescriptor=='FALSE.TRUE.FALSE.FALSE.TRUE.0.0'] # 40
+relaDf$comp[relaDf$ijDescriptor=='FALSE.TRUE.TRUE.FALSE.FALSE.1.1'] # 10
+
+descTable <- table(relaDf$ijDescriptor[relaDf$simRela=="Unknown"])
 cat(paste0("relaDf$simRela[relaDf$ijDescriptor=='",names(descTable),"'] <- '' # ",descTable,collapse = "\n"))
 relaDf$simRela[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.FALSE.FALSE.1.1'] <- 'Half-siblings' # 92849
 relaDf$simRela[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.FALSE.FALSE.2.2'] <- 'Full-siblings' # 9135
@@ -100,11 +114,18 @@ relaDf$simRela[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.TRUE.FALSE.2.1' ] <- 'Sel
 relaDf$simRela[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.TRUE.TRUE.2.2'  ] <- 'Self to self' # 735
 relaDf$simRela[relaDf$ijDescriptor=='FALSE.TRUE.FALSE.FALSE.FALSE.1.1' ] <- 'Parent / child' # 1260
 relaDf$simRela[relaDf$ijDescriptor=='FALSE.TRUE.FALSE.FALSE.TRUE.1.2'  ] <- 'Parent / self' # 105
+relaDf$simRela[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.FALSE.FALSE.0.0'] <- 'UR children' # 240
+relaDf$simRela[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.FALSE.TRUE.0.0'] <- 'UR child/self' # 120
+relaDf$simRela[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.TRUE.FALSE.0.0'] <- 'UR self/child' # 120
+relaDf$simRela[relaDf$ijDescriptor=='FALSE.FALSE.FALSE.TRUE.TRUE.0.0'] <- 'UR selfs' # 40
+relaDf$simRela[relaDf$ijDescriptor=='FALSE.TRUE.FALSE.FALSE.FALSE.0.0'] <- 'Parent / UR cross' # 120
+relaDf$simRela[relaDf$ijDescriptor=='FALSE.TRUE.FALSE.FALSE.TRUE.0.0'] <- 'Parent / UR self' # 40
+relaDf$simRela[relaDf$ijDescriptor=='FALSE.TRUE.TRUE.FALSE.FALSE.1.1'] <- 'Parent / Parent' # 10
 table(relaDf$simRela)
 
 #Remove parents since that should be possible
 relaDf <- relaDf[!grepl("Parent",relaDf$simRela),]
-relaDf <- relaDf[order(relaDf$simRela=="Unknown",relaDf$totProp),]
+#relaDf <- relaDf[order(relaDf$simRela=="Unknown",relaDf$totProp),]
 
 #Add in proportional analyses
 relaDf$minTot  <- apply(cbind(relaDf$tot_i,relaDf$tot_j),1,min)
@@ -113,9 +134,40 @@ propDf <- relaDf[,grep("^(het|homo)_(het|homo)$",colnames(relaDf))]
 colnames(propDf) <- paste0(colnames(propDf),"_trans")
 relaDf <- cbind(relaDf[,!grepl("_trans$",colnames(relaDf))],propDf)
 
-View(relaDf)
+#Cross to inbred analysis
+chiFromTot <- function(rel,totCol,divVector){
+  exp_hethet<-totCol/(divVector[1])
+  exp_hethom<-totCol/(divVector[2])
+  exp_homhet<-totCol/(divVector[3])
+  exp_homhom<-totCol/(divVector[4])
+  chiSum <- rowSums(na.rm = T,cbind(
+    (rel$het_het  - exp_hethet)^2/exp_hethet,
+    (rel$het_homo - exp_hethom)^2/exp_hethom,
+    (rel$homo_het - exp_homhet)^2/exp_homhet,
+    (rel$homo_homo- exp_homhom)^2/exp_homhom
+  ))
+  return(chiSum)
+}
+relaDf$crToIb_chiSum <- chiFromTot(relaDf,relaDf$tot_j,c(3,6,0,0))
+relaDf$ibToCr_chiSum <- chiFromTot(relaDf,relaDf$tot_i,c(3,0,6,0))
+relaDf$ibToIb_chiSum <- chiFromTot(relaDf,(relaDf$tot_j+relaDf$tot_i)/2,c(3,6,6,12))
+relaDf$fs_chiSum <- chiFromTot(relaDf,relaDf$tot_i,c(2,0,0,0))+
+  chiFromTot(relaDf,relaDf$tot_j,c(2,0,0,0))
+
+if(combineWithDf1){
+  write.csv(relaDf,file = "data/obsAndSimRelas.csv")
+}else{
+  write.csv(relaDf,file = "data/simulatedRelas.csv")
+}
 
 
+library(ggplot2)
+hist(relaDf$totProp,1000)
+ggplot(relaDf[relaDf$totProp>0.025,],aes(inbredToSib,totProp,color=simRela,shape=simRela))+
+  geom_point()
+
+
+relaDf$het_het-relaDf$totSum*4
 
 #Save analysis
 save.image(file = "./data_ignored/secondary/SimulationPriorToVis.rimage")

@@ -1,3 +1,13 @@
+hasDupes <- function(x){x%in%(x[duplicated(x)])}
+
+cntOfYInX <- function(x,y){
+  x_agg <- aggregate(x,by=list(x),length)
+  if(!all(x_agg$Group.1%in%x)){stop("Mismatch")}
+  z <- rep(NA,length(y))
+  z[match(x_agg$Group.1,y)]<-x_agg$x
+  return(z)
+}
+
 gameteFun <- function(geno){
   geno[geno==1] <- sample(c(0,2),size = sum(geno==1),replace = T)
   return(geno/2)
@@ -19,15 +29,18 @@ iFun <- function(i,samplesInvestigated,uniSamples,dupeList,df2_sample_table,dupe
     jId_cnt <- dupeList_var[[j]]
     jTot <- df2_sample_table[jSam]
     homo_homo <- jId_cnt==2 & jIds%in%iIds[iId_cnt==2]
-    homo_het  <- jId_cnt==2 & jIds%in%iIds[iId_cnt==1]
-    het_homo  <- jId_cnt==1 & jIds%in%iIds[iId_cnt==2]
+    het_homo  <- jId_cnt==2 & jIds%in%iIds[iId_cnt==1]
+    homo_het  <- jId_cnt==1 & jIds%in%iIds[iId_cnt==2]
     het_het   <- jId_cnt==1 & jIds%in%iIds[iId_cnt==1]
     
     similarity <- data.frame(
       i=i,j=j,iSam=iSam,jSam=jSam,
-      het_het=sum(het_het),het_homo=sum(het_homo),
-      homo_het=sum(homo_het),homo_homo=sum(homo_homo),
-      len_i=length(iIds),len_j=length(jIds),
+      het_het=sum(het_het),
+      het_homo=sum(het_homo),
+      homo_het=sum(homo_het),
+      homo_homo=sum(homo_homo),
+      len_i=length(iIds),
+      len_j=length(jIds),
       tot_i=iTot,tot_j=jTot
     )
     return(similarity)
