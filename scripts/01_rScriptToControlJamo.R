@@ -1,7 +1,7 @@
 #Variables
-downloadDir <- "~/Experiments/FastNeutron/downloading/"
-pathToCurlScript  <- "../jamoDepthRequests2.sh"
-simulConn <- 10
+downloadDir <- "~/Experiments/PhalFNP/data_ignored/primary/bam/"
+pathToCurlScript  <- "../jamoDepthRequests2.sh" #This file contains commands that download the files
+simulConn <- 10 #The maxmimum number of connections to attempt at any given time
 
 #Setup
 setwd(downloadDir)
