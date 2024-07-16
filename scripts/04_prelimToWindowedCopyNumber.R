@@ -4,7 +4,7 @@ opt$wd <- "~/Experiments/PhalFNP/"
 opt$prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240625_1442.csv"
 opt$imageFile  <- "data_ignored/secondary/afterWindow.rimage"
 opt$winDfFile  <- "data_ignored/secondary/windowedNs5x.csv"
-source("~/Experiments/PhalFNP/scripts/peakFinding.R")
+source("~/Experiments/PhalFNP/scripts/functions/peakFinding.R")
 cuL <- list() #For storing analyses
 
 #Setup environment

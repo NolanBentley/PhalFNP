@@ -13,7 +13,7 @@ nCores <- 20
 #Setup packages
 packageDir <- file.path(wd,"R")
 packageVec <- c("ggplot2","chron","data.table")
-library(Biostrings) #Installation somewhat tricky
+library(Biostrings) #Installation somewhat tricky on my server
 
 #Use paths
 setwd(wd)
@@ -68,7 +68,7 @@ for(i in 1:length(bedName)){
 }
 bedVec<-fileDf$bed
 
-#Summarize fbam files analyzed
+#Summarize bam files analyzed
 write.csv(fileDf,"data/bamFilesInDepth.csv")
 
 #Run depth calculations

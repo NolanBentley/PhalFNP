@@ -7,7 +7,7 @@ outDir  <- "./depthImages/"
 
 ##### Load data ####
 setwd(wd)
-source("./scripts/interactiveAggPlot.R")
+source("./scripts/functions/interactiveAggPlot.R")
 library(ggplot2)
 library(hexbin)
 library(plotly)
@@ -87,6 +87,7 @@ aggDf$IntervalRange_bp <- aggDf$max-aggDf$min+1
 aggDf <- aggDf[order(aggDf$chr_orig,aggDf$chr,aggDf$idNumBuffered,aggDf$min),]
 
 ##### Load gene data ####
+if(!file.exists("data/geneDf.csv")){source("scripts/functions/generateGeneDf.R")}
 geneDf <- read.csv("data/geneDf.csv")
 
 ### testing plots

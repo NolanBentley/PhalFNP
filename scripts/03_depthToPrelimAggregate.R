@@ -12,10 +12,11 @@ library(parallel)
 
 ## Load functions
 # Calculate the mean depth per window (byLen)
-source('./scripts/aggFun1.R')
+source('./scripts/functions/aggFun1.R')
 
 #Get data
 depthFileList <- lapply(1:totalSteps,function(x){list.files(depthDir,pattern = paste0(x,"of",totalSteps,"int.depth\\.out$"),full.names = T)})
+write.csv(depthFileList,file = "examples/03_depthFileList.csv")
 cl <- makeCluster(nCores)
 j<-1
 for(j in 1:length(depthFileList)){
