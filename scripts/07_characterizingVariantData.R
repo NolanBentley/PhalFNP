@@ -18,14 +18,17 @@ df1$sample_orig <-df1$sample
 df1$sample <- gsub("Fil","FIL",gsub("M2_","M2-",gsub("\\.","_",df1$sample)))
 df1$sample <- gsub("-.$","",df1$sample)
 df1$mother <- gsub("(FIL.._[[:digit:]]+)_.*","\\1",df1$sample)
+
 #Clean variant id
 df1$analysis <- "GATK"
 df1$analysis[is.na(df1$QD)]<-"DELLY"
 df1$id      <- paste0(df1$chrom,"-",df1$pos,"_",df1$ref_allele,"->",df1$alt_allele)
 df1$sample_locusId <- paste0(df1$sample,"_",df1$id)
+
 #Add in positions
 df1$begPos  <- as.numeric(gsub("->.*","",df1$pos))
 df1$endPos  <- as.numeric(gsub(".*->","",df1$pos))
+
 #Reorder
 df1 <- df1[order(df1$chrom,df1$begPos,df1$endPos,df1$sample,df1$id),]
 
@@ -62,7 +65,6 @@ df1$lowFreqMutation <- df1$id%in%names(id_table)[id_table<9.5]
 
 #Find likely outcrosses based on over representation of heterozygous genotypes
 dfCP <- df1[df1$lowFreqMutation & df1$nr & df1$type%in%c("SNP","INDEL"),]
-
 samDf$lfm_n       <- cntOfYInX(dfCP$codedSample,samDf$code)
 samDf$lfm_het     <- cntOfYInX(dfCP$codedSample[dfCP$var_count==1],samDf$code)
 samDf$lfm_homo    <- cntOfYInX(dfCP$codedSample[dfCP$var_count==2],samDf$code)
@@ -75,103 +77,86 @@ table(samDf$cp_logic,useNA = "ifany")
 mainText <- paste0(
   "Of the samples, ",
   sum(samDf$cp_logic)," (",round(mean(samDf$cp_logic)*100,3),"%) of ",nrow(samDf),
-  " genotypes are likely cross-pollinated"
+  " genotypes\nare likely cross-pollinated"
 )
+
+#Establish the parent of likely self-s
+hetPropCutoff2 <- 0.9
+samDf$father <- NA
+samDf$likelySelf <- samDf$lfm_n>=(totCntCutoff*2)&samDf$lfm_hetProp<=hetPropCutoff2
+samDf$father[samDf$likelySelf] <- samDf$mother[samDf$likelySelf]
+
+#Add in coverage analysis
 
 #Make a graphic
 library(ggExtra)
 library(ggplot2)
-p1 <- ggplot(samDf,aes(lfm_hetProp,lfm_n,color=cp_logic))+
+
+samDf$cp_status <- "Ambiguous"
+samDf$cp_status[samDf$likelySelf]<-"Self"
+samDf$cp_status[samDf$cp_logic  ]<-"Cross"
+p1 <- ggplot(samDf,aes(lfm_hetProp,lfm_n,color=cp_status,shape=cp_status))+
   theme_bw()+#
   labs(x="Proportion of filtered variants heterozygous",
        y=paste0("Number of variants after filtering to low frequency mutations (lfm)"),
-       color="Likely cross-pollinated:",
+       color="Parentage estimate:",
        title=mainText)+
-  geom_vline(xintercept = hetPropCutoff,color="forestgreen")+
-  geom_hline(yintercept = totCntCutoff,color="purple4")+
+  geom_vline(xintercept = c(hetPropCutoff2,hetPropCutoff),color=c("purple4","forestgreen"))+
+  geom_hline(yintercept = c(totCntCutoff*2,totCntCutoff),color=c("purple4","forestgreen"))+
   geom_point(color="white",size=3)+
   geom_point(alpha=0.5,size=2.5)+
   theme(legend.position = "bottom")+
   scale_y_continuous(breaks = seq(0,200,by=20))+
-  scale_x_continuous(breaks = seq(0,1,by=0.1))
+  scale_x_continuous(breaks = seq(0,1,by=0.1))+
+  scale_color_discrete()
 p2 <- ggMarginal(p1,type="histogram",size=5,bins=100)
 ggsave("data/heterozygosity.png",p2,width = 88*2,height = 88*2.2,units = "mm",dpi = 600)
 
 
-#Establish the parent of likely self-s
-hetPropCutoff2 <- 0.9
-sampleAgg$mother <- df1$mother[match(sampleAgg$Group.1,df1$sample)]
-sampleAgg$father <- NA
-sampleAgg$likelySelf <- sampleAgg$totCnt>=(totCntCutoff*2)&sampleAgg$hetProp<=hetPropCutoff2
-sampleAgg$father[sampleAgg$likelySelf] <- sampleAgg$mother[sampleAgg$likelySelf]
+#Calculate similarity values across nr / lfm variants
+relaDf <- similarityFun(df1[df1$lowFreqMutation&df1$nr,])
+relaDf$logicSum <-rowSums(relaDf[,grep("^(het|homo)_(het|homo)$",colnames(relaDf))])
+relaDf$totSum   <-rowSums(relaDf[,grep("tot_(i|j)",colnames(relaDf))])
+relaDf$totMean  <- relaDf$totSum/2
+relaDf$totProp  <- relaDf$logicSum/relaDf$totMean
 
-plot(sampleAgg$hetProp,sampleAgg$homoCnt*2-sampleAgg$hetProp,col=c("black","red")[sampleAgg$likelySelf+1])
+#Make smaller
+hist(relaDf$totProp,ylim=c(0,1000),10000);abline(v = 0.05,col="red")
+relaDf <- relaDf[relaDf$totProp>0.05,]
 
-#Manually set known relationships based on best-judgement
-table(sampleAgg$father,useNA = "ifany")
+#Filter and organize
+relaDf <- relaDf[relaDf$iSam!=relaDf$jSam,]
+relaDf <- relaDf[order(-relaDf$totProp),]
 
-uniFatherless <- sampleAgg$Group.1[is.na(sampleAgg$father)]
-df1Homo <- df1[df1$var_count==2,]
-for(i in 1:length(uniFatherless)){
-  if(i==1){
-    basDf <- NULL
-  }
-  currVars  <- df1[df1$sample==uniFatherless[i],]
-  currAgg     <- aggregate(df1$id    ,by=list(df1$sample    ),function(x,y){sum(x%in%y)},y=currVars$id)
-  currHomoAgg <- aggregate(df1Homo$id,by=list(df1Homo$sample),function(x,y){sum(x%in%y)},y=currVars$id)
-  currAgg$homo_x <- 0
-  currAgg$homo_x [match(currHomoAgg$Group.1,currAgg$Group.1)]<- currHomoAgg$x
-  currAgg$fatherlessName   <- currVars$sample[1]
-  basDf<- rbind(basDf,currAgg)
-  print(i)
+#Cross to inbred analysis
+chiFromTot <- function(rel,totCol,divVector){
+  exp_hethet<-totCol/(divVector[1])
+  exp_hethom<-totCol/(divVector[2])
+  exp_homhet<-totCol/(divVector[3])
+  exp_homhom<-totCol/(divVector[4])
+  chiSum <- rowSums(na.rm = T,cbind(
+    (rel$het_het  - exp_hethet)^2/exp_hethet,
+    (rel$het_homo - exp_hethom)^2/exp_hethom,
+    (rel$homo_het - exp_homhet)^2/exp_homhet,
+    (rel$homo_homo- exp_homhom)^2/exp_homhom
+  ))
+  return(chiSum)
 }
-basDf <- basDf[basDf$Group.1!=basDf$fatherlessName,]
-basDf <- basDf[basDf$x>0,]
+relaDf$crToIb <- chiFromTot(relaDf,relaDf$tot_j,c(3,6,0,0))
+relaDf$ibToCr <- chiFromTot(relaDf,relaDf$tot_i,c(3,0,6,0))
+relaDf$ibToIb <- chiFromTot(relaDf,(relaDf$tot_j+relaDf$tot_i)/2,c(3,6,6,12))
+relaDf$fs     <- chiFromTot(relaDf,relaDf$tot_i,c(2,0,0,0))+
+  chiFromTot(relaDf,relaDf$tot_j,c(2,0,0,0))
 
-basDf$flMother <- df1$mother[match(basDf$fatherlessName,df1$sample)]
-basDf$pfMother <- df1$mother[match(basDf$Group.1       ,df1$sample)]
-basDf$pfFather <- sampleAgg$father[match(basDf$Group.1       ,sampleAgg$Group.1)]
-basDf$n12      <- sampleAgg$totCnt[match(basDf$fatherlessName,sampleAgg$Group.1)]
-basDf$n11      <- sampleAgg$totCnt[match(basDf$Group.1       ,sampleAgg$Group.1)]
+#Add in known parentage
+relaDf$iSam_mother <- samDf$mother[match(relaDf$iSam,samDf$sample)]
+relaDf$iSam_father <- samDf$father[match(relaDf$iSam,samDf$sample)]
+relaDf$jSam_mother <- samDf$mother[match(relaDf$jSam,samDf$sample)]
+relaDf$jSam_father <- samDf$father[match(relaDf$jSam,samDf$sample)]
 
-basDf$inbredToSib <- (basDf$n11*0.5-basDf$x)^2/(basDf$n11*0.5)
-hist(basDf$inbredToSib,1000)
+manualAssignment <- cbind(relaDf,"...",samDf[match(relaDf$iSam,samDf$sample),],"...",samDf[match(relaDf$jSam,samDf$sample),])
+write.csv(manualAssignment,file = "data/highRelas.csv")
+manualAssignment <- manualAssignment[is.na(manualAssignment$iSam_father),]
+write.csv(manualAssignment,file = "data/fatherlessRelas.csv")
 
-
-basDf$n1 <- basDf$n11/0.75
-basDf$n2 <- (basDf$n12 - 0.5*(basDf$n1))/0.5
-
-basDf$n2 - basDf$n1
-
-# P1xP2  vs. P1xP1 assuming P1 fully heterozygous and P1 and P2 have similar frequencies of mutation
-#P1xP2 heterozygous at half of P1 
-#P1xP2 heterozygous at half of P1 
-
-#P1xP1 homozygous mutant at 33% of P1
-#P1xP1 heterozygous at 
-
-View(basDf[order(-basDf$x),])
-
-basDf$x
-
-#Look for 
-df1VarTable <-aggregate(df1$var_count,by=list(df1$sample),table)
-df1VarFreqs <- do.call("rbind",lapply(df1VarTable$x,function(x){c(het=x["1"],homo=x["2"])}))
-df1VarFreqs[is.na(df1VarFreqs)]<-0
-plot(df1VarFreqs[,1],df1VarFreqs[,2],col=c("black","red")[(df1VarTable$Group.1%in%(df1$sample[df1$outcross]))+1])
-
-heatmap(samMat[samplesInvestigated,samplesInvestigated],scale = "none")
-
-#Explore the results
-diag(samMat)<-NA
-
-highMax <-apply(samMat,1,max,na.rm=T)
-highMaxMat <- samMat[highMax>0.6,highMax>0.6]
-heatmap(highMaxMat,scale="none")
-
-install.packages("heatmaply")
-install.packages("htmlwidgets")
-library(heatmaply)
-library(htmlwidgets)
-pMap <- heatmaply(highMaxMat)
-pMap
+#Taking notes on relationships
