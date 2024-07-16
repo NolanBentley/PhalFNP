@@ -73,9 +73,9 @@ samDf$cp_logic <- samDf$lfm_hetProp>=hetPropCutoff & samDf$lfm_n>=totCntCutoff
 df1$cp_logic   <- df1$sample%in%(samDf$sample[which(samDf$cp_logic)])
 table(samDf$cp_logic,useNA = "ifany")
 mainText <- paste0(
-  "Based on these results,\n",
+  "Of the samples, ",
   sum(samDf$cp_logic)," (",round(mean(samDf$cp_logic)*100,3),"%) of ",nrow(samDf),
-  " genotypes are likely outcrossed"
+  " genotypes are likely from cross-pollination"
 )
 
 #Make a graphic
