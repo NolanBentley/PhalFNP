@@ -4,7 +4,7 @@ wd <- "~/Experiments/PhalFNP/"
 setwd(wd)
 
 #Load data
-source("./scripts/similarityCalc.R")
+source("./scripts/functions/similarityCalc.R")
 variantFile <- "https://utexas.box.com/shared/static/yht8ojfafsab3btuq6xe2chw8by9onfo.csv"
 df1 <- read.csv(variantFile)
 
