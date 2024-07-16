@@ -1,16 +1,17 @@
 #Variables
 downloadDir <- "~/Experiments/PhalFNP/data_ignored/primary/bam/"
-pathToCurlScript  <- "../jamoDepthRequests2.sh" #This file contains commands that download the files
-simulConn <- 10 #The maxmimum number of connections to attempt at any given time
+pathToCurlScript  <- "../jamoDepthRequests2.sh" #This file contains the curl commands to download the files
+simulConn <- 10 #The maximum number of connections to attempt at any given time
 
 #Setup
 setwd(downloadDir)
 if(!file.exists(pathToCurlScript)){
+  #Example line: echo  'phal_FIL30_1_M2-2__505532_1331182.bam'; curl -X GET "https://files-download.jgi.doe.gov/download_files/622f755ce99caa81935b4995/" -H "accept: application/json" -H "Authorization: Bearer /api/sessions/f77517bb9e5e43ac06a005a6dc96f388" -H "X-CSRFToken: REDACTED" -b cookies -o 'phal_FIL30_1_M2-2__505532_1331182.bam'
   stop("Script file not found")
 }
 
 #Get cookies
-system("curl 'https://signon.jgi.doe.gov/signon/create' --data-urlencode 'login=nolanbentley@utexas.edu' --data-urlencode 'password=*vGQM4b6GeGFStc' -c cookies > /dev/null")
+system("curl 'https://signon.jgi.doe.gov/signon/create' --data-urlencode 'login=nolanbentley@utexas.edu' --data-urlencode 'password=REDACTED' -c cookies > /dev/null")
 
 #Load code and list of files already downloaded
 codeLines <- readLines(pathToCurlScript)
