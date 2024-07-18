@@ -105,7 +105,7 @@ samDf$cp_status[samDf$likelySelf]<-"Self"
 samDf$cp_status[samDf$cp_logic  ]<-"Cross"
 p1 <- ggplot(samDf[order(-samDf$coverage),],
              aes(lfm_hetProp,lfm_n,fill=cp_status,size=coverage))+
-  theme_bw()+#
+  #theme_bw()+#
   labs(x="Proportion of filtered variants that are heterozygous",
        y=paste0("Number of filtered variants"),
        fill="Parentage estimate:",
@@ -114,8 +114,8 @@ p1 <- ggplot(samDf[order(-samDf$coverage),],
   geom_vline(xintercept = c(hetPropCutoff2,hetPropCutoff),color=c("forestgreen","purple4"))+
   geom_hline(yintercept = c(totCntCutoff*2,totCntCutoff),color=c("forestgreen","purple4"))+
   geom_point(color="white",fill="white",mapping = aes(size=coverage+0.2*max(coverage,na.rm=T)))+
-  geom_point(alpha=0.5,shape=21)+
-  scale_size(range = c(0.5,4))+
+  geom_point(alpha=0.3,shape=21)+
+  scale_size(range = c(0.5,8))+
   scale_y_continuous(breaks = seq(0,200,by=20))+
   scale_x_continuous(breaks = seq(0,1,by=0.1))+
   theme(legend.position="bottom",
@@ -160,6 +160,9 @@ relaDf$ibToCr <- chiFromTot(relaDf,relaDf$tot_i,c(3,0,6,0))
 relaDf$ibToIb <- chiFromTot(relaDf,(relaDf$tot_j+relaDf$tot_i)/2,c(3,6,6,12))
 relaDf$fs     <- chiFromTot(relaDf,relaDf$tot_i,c(2,0,0,0))+
   chiFromTot(relaDf,relaDf$tot_j,c(2,0,0,0))
+relaDf$minTest <- apply(cbind(relaDf$crToIb,relaDf$ibToCr,relaDf$ibToIb,relaDf$fs),1,min,na.rm=T)
+
+plot(relaDf$totProp,relaDf$minTest)
 
 #Add in known parentage
 relaDf$iSam_mother <- samDf$mother[match(relaDf$iSam,samDf$sample)]
@@ -173,3 +176,4 @@ manualAssignment <- manualAssignment[is.na(manualAssignment$iSam_father),]
 write.csv(manualAssignment,file = "data/fatherlessRelas.csv")
 
 #Taking notes on relationships
+write.csv(samDf,file = "data/sampleDf.csv")
