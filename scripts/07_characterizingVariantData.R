@@ -127,7 +127,7 @@ ggsave("data/heterozygosity.png",p2,width = 88*2,height = 88*2.2,units = "mm",dp
 
 
 #Calculate similarity values across nr / lfm variants
-relaDf <- similarityFun(df1[df1$lowFreqMutation&df1$nr,])
+relaDf <- similarityFun(df1[df1$nr&df1$lowFreqMutation,])
 relaDf$logicSum <-rowSums(relaDf[,grep("^(het|homo)_(het|homo)$",colnames(relaDf))])
 relaDf$totSum   <-rowSums(relaDf[,grep("tot_(i|j)",colnames(relaDf))])
 relaDf$totMean  <- relaDf$totSum/2
@@ -155,6 +155,8 @@ chiFromTot <- function(rel,totCol,divVector){
   ))
   return(chiSum)
 }
+table(samDf$cp_status)
+  
 relaDf$crToIb <- chiFromTot(relaDf,relaDf$tot_j,c(3,6,0,0))
 relaDf$ibToCr <- chiFromTot(relaDf,relaDf$tot_i,c(3,0,6,0))
 relaDf$ibToIb <- chiFromTot(relaDf,(relaDf$tot_j+relaDf$tot_i)/2,c(3,6,6,12))
@@ -162,13 +164,12 @@ relaDf$fs     <- chiFromTot(relaDf,relaDf$tot_i,c(2,0,0,0))+
   chiFromTot(relaDf,relaDf$tot_j,c(2,0,0,0))
 relaDf$minTest <- apply(cbind(relaDf$crToIb,relaDf$ibToCr,relaDf$ibToIb,relaDf$fs),1,min,na.rm=T)
 
-plot(relaDf$totProp,relaDf$minTest)
-
 #Add in known parentage
 relaDf$iSam_mother <- samDf$mother[match(relaDf$iSam,samDf$sample)]
 relaDf$iSam_father <- samDf$father[match(relaDf$iSam,samDf$sample)]
 relaDf$jSam_mother <- samDf$mother[match(relaDf$jSam,samDf$sample)]
 relaDf$jSam_father <- samDf$father[match(relaDf$jSam,samDf$sample)]
+relaDf <- data.frame(MatSib=relaDf$iSam_mother==relaDf$jSam_mother,relaDf[,colnames(relaDf)!="MatSib"])
 
 manualAssignment <- cbind(relaDf,"...",samDf[match(relaDf$iSam,samDf$sample),],"...",samDf[match(relaDf$jSam,samDf$sample),])
 write.csv(manualAssignment,file = "data/highRelas.csv")
