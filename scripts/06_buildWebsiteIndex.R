@@ -1,28 +1,48 @@
-#### Load aggDf ####
+#Set variables
 wd <- "~/Experiments/PhalFNP/"
+aggFile <- "data_ignored/secondary/plottedAggDf_n.csv"
+toggleFilterToExisting <- T
+
+#### Load aggDf ####
 setwd(wd)
-if(!exists("aggDf")){aggDf<-read.csv("data_ignored/secondary/plottedAggDf_n.csv")}
+if(!exists("aggDf")){aggDf<-read.csv(aggFile)}
 aggDf_og <-aggDf
 aggDf<-aggDf[aggDf$chrLogic,]
 
+#Remove files if desired
+if(toggleFilterToExisting){
+  dirsToSearch <- unique(dirname(unique(aggDf$singleLineSingleChr)))
+  currFiles <- unique(unlist(sapply(dirsToSearch,list.files)))
+  aggDf <- aggDf[basename(aggDf$singleLineSingleChr)%in%currFiles,]
+}
+
 #### Build index ####
-index <- c(
-  '<!DOCTYPE html>','<html>','<head>','<title>',
-  'Panicum hallii fast-neutron population large structural variant explorer',
-  '</title>','</head>','<body>','<h1>',
-  'Welcome to the large variant explorer!',
-  '</h1>','<p>',
-  'This website houses interactive plots for exploring coverage-based variants from the <i>P. hal</i> FNP.',
-  
-  '<br><br>This data visualizes two primary statistics; <br>',
-  '<b>Hexagons:</b> the frequency of bins of position and normalized-coverage across the population being visualized.<br>',
-  '<b>Points:</b> the normalized-coverage for specific samples subset to only the intervals where the absolute value of the y-axis exceeds certain cutoffs.',
-  
-  '<br><br>The y-axis is calculated from the median coverage transformed into estimated ploidy across 5 intervals. ',
-  'Each interval summarizes the mean read depth across a 2.5-5kb range of positions excluding positions with 0 depth. ',
-  '<br>The coverage has been transformed to estimate copy-number by multiplying by 2 and dividing by the peak value.',
-  '</p>','</body>','</html>'
-)
+index <- c('
+<!DOCTYPE html>
+<html>
+<head>
+<title>
+Panicum hallii fast-neutron population large structural variant explorer
+</title>
+</head>
+<body>
+<h1>Welcome to the large variant explorer!</h1>
+<p>
+This website houses interactive plots for exploring large (>>0.2Mb) copy-number variants from the <i>Panicum. hallii</i> fast neutron population (FNP).<br>
+<br>
+<dt>The y-axis values were calculated to approximate ploidy across the x-axis intervals:</dt>
+<dd>- Each point is the transformed median copy-number across a 5x window of 5Kb intervals every 40Kb for an individual line.</dt>
+<dd>- Each interval summarizes the mean read depth across a 2.5-5kb range of positions excluding positions with 0 depth.</dd>
+<dd>- The "copy-number" was estimated by multiplying the mean coverage across the interval by 2 and dividing by the peak mean coverage.</dd><br>
+<dt>This data is visualized with two primary statistics:</dt>
+<dd>- <b>Hexagons:</b> the frequency of bins of position and copy number across the population being visualized.<br></dd>
+<dd>- <b>Points:</b> the normalized-coverage for specific samples subset to only the intervals where the absolute value of the y-axis exceeds certain cutoffs.</dd><br>
+<dt>This implementation removed intervals with no read dpeth, and thus omits homozygous mutations.</dt>  
+</p>
+</body>
+</html>
+')
+index<-unlist(strsplit(index,"\n"))
 index_endBody <- which(trimws(index)=="</body>")
 aggDf$singleLineBinPages <- paste0("./depthImages/singleLineIndexes/",aggDf$idNum_bin,".html")
 singleLineBinPages <-sort(unique(aggDf$singleLineBinPages))
@@ -95,24 +115,6 @@ for(i in 1:length(posHtmlFiles)){
   )
   write(index_built,posHtmlFiles[i])
 }
-
-#Fix page titles
-## Deprecated
-'
-htmlFiles <- list.files("depthImages/",pattern = "html$",full.names = T,recursive = T)
-replacePlotlyTitles <- function(x){
-  currHtml <- readLines(x)
-  titlerow<- grep("^ *.title.plotly..title.$",currHtml)
-  if(length(titlerow)>0){
-    currHtml[titlerow[1]]<-paste0("<title>",basename(x),"</title>")
-    write(currHtml,file = x)
-  }
-}
-sapply(htmlFiles,replacePlotlyTitles)
-
-#Add gene link
-geneDf <- read.csv("data/geneDf.csv")
-'
 
 
 
