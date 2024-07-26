@@ -114,11 +114,36 @@ aggPlotFun(aggDf_sub2,aggDf_sub2$singleLineSingleChr,geneDf)
 
 #### Save aggDf ####
 write.csv(aggDf,"data_ignored/secondary/plottedAggDf_n.csv")
+write.csv(aggDf[aggDf$hasDivergentMedian,],"data_ignored/secondary/aggDf_DivergentOnly.csv")
+#aggDf <- read.csv("data_ignored/secondary/plottedAggDf_n.csv")
+
+#Investigate sd
+nonDivDf <- aggDf[!aggDf$hasDivergentMedian,]
+agg_nonDivDf <- aggregate(nonDivDf$mean,by=list(nonDivDf$id),mad)
+
+##Add in peak values
+sampleDf <- read.csv("data_ignored/secondary/aggDf_SampleValues.csv")
+sampleDf$indOg <- sampleDf$ind
+sampleDf$ind <- gsub("phal_|-[[:digit:]]$|_1$","",sampleDf$indOg)
+agg_nonDivDf$id <- gsub("_0+","_",gsub("phal_|-[[:digit:]]$|_1$","",agg_nonDivDf$Group.1))#gsub("_0+","_",gsub("phal_|-[[:digit:]]$|_1$","",agg_nonDivDf$Group.1))
+idCheck <- sort(agg_nonDivDf$id[!(agg_nonDivDf$id)%in%(sampleDf$ind)])
+if(length(idCheck)!=0){
+  stop("Id mismatch")
+}else{
+  agg_nonDivDf$coverage <- sampleDf$newSamplePeakMean[match(agg_nonDivDf$id,sampleDf$ind)]
+  agg_nonDivDf$madLogic <- agg_nonDivDf$x>0.102
+  plot(agg_nonDivDf$coverage,agg_nonDivDf$x,ylab="mad at non-divergent loci",xlab="peak coverage")
+  text(agg_nonDivDf$coverage[agg_nonDivDf$madLogic],agg_nonDivDf$x[agg_nonDivDf$madLogic],
+       labels = agg_nonDivDf$id[agg_nonDivDf$madLogic],col="red")
+  points(agg_nonDivDf$coverage,agg_nonDivDf$x)
+  print(tail(agg_nonDivDf[order(agg_nonDivDf$x),],20))
+}
+
 
 #### Making summary values ####
-aggDf_presub <- aggDf
+aggDf_presub<- aggDf
 aggDf_presub<- aggDf_presub[order(aggDf_presub$id,aggDf_presub$chr,aggDf_presub$min),]
-aggDf_presub$div <- aggDf_presub$median<min(cutoffs)|aggDf_presub$median>max(cutoffs)
+#aggDf_presub$div <- aggDf_presub$median<min(cutoffs)|aggDf_presub$median>max(cutoffs)
 
 aggDf_presub$divMinus2 <- c(F,F,aggDf_presub$div[1:(nrow(aggDf_presub)-2)])
 aggDf_presub$divMinus1 <- c(F,aggDf_presub$div[1:(nrow(aggDf_presub)-1)])
@@ -147,6 +172,29 @@ out <- c(out,paste0("Of Ids: ",sum(win5Max$x>=5)," (",round(mean(win5Max$x>=5)*1
 write(out,file = "data/plotsummaryvalues.csv")
 
 
+#### Summarize values per chr and line
+aggDf$closestMed <- round(aggDf$median)
+aggDf$chr_cnv <- paste0(format(aggDf$chr_orig,justify = "right"),"_",format(aggDf$closestMed))
+aggDf$ind__chr_cnv <- paste0(aggDf$id,"__",aggDf$chr_cnv)
+
+cnvDf <- data.frame(table(aggDf$ind__chr_cnv))
+cnvDf$id     <- trimws(gsub("__.*","",cnvDf$Var1))
+cnvDf$chr_cn <- trimws(gsub(".*__","",cnvDf$Var1))
+cnvDf$chr    <- trimws(gsub("_.*","",cnvDf$chr_cn))
+cnvDf$cn     <- as.numeric(gsub(".*_","",cnvDf$chr_cn))
+
+uniChr_cn <- unique(cnvDf$chr_cn)
+for(i in 1:length(uniChr_cn)){
+  if(i==1){outDf<-NULL}
+  currChr_cn <- uniChr_cn[i]
+  currDf <- cnvDf[cnvDf$chr_cn==currChr_cn,]
+  outDf<-rbind(outDf,currDf[which.max(currDf$Freq),])
+}
+outDf <- outDf[outDf$Freq>5,]
+outDf$chrLogic <- grepl("Chr",outDf$chr)
+outDf <- outDf[order(-outDf$chrLogic,outDf$chr,outDf$cn),]
+outDf$url <- aggDf$singleLineMultiChr[match(outDf$id,aggDf$id)]
+write.csv(outDf,"data/linesWithMostCNVs.csv")
 
 
 
