@@ -4,6 +4,10 @@ wd <- "~/Experiments/PhalFNP/"
 coverageFile <- "data_ignored/secondary/aggDf_SampleValues.csv"
 setwd(wd)
 
+#Load packages
+library(ggExtra)#install.packages("ggExtra")
+library(ggplot2)#install.packages("ggplot2")
+
 #Load data
 source("./scripts/functions/similarityCalc.R")
 variantFile <- "https://utexas.box.com/shared/static/yht8ojfafsab3btuq6xe2chw8by9onfo.csv"
@@ -77,7 +81,7 @@ df1$cp_logic   <- df1$sample%in%(samDf$sample[which(samDf$cp_logic)])
 table(samDf$cp_logic,useNA = "ifany")
 mainText <- paste0("\n",
   sum(samDf$cp_logic)," (",round(mean(samDf$cp_logic)*100,3),"%) of ",nrow(samDf),
-  " genotypes are likely cross-pollinated"
+  " genotypes\nare likely cross-pollinated"
 )
 
 #Establish the parent of likely self-s
@@ -97,9 +101,6 @@ samDf$coverage <- NA
 samDf$coverage[samCoverage$match[!is.na(samCoverage$match)]] <- samCoverage$newSamplePeakMean[!is.na(samCoverage$match)]
 
 #Make a graphic
-library(ggExtra)
-library(ggplot2)
-
 samDf$cp_status <- "Ambiguous"
 samDf$cp_status[samDf$likelySelf]<-"Self"
 samDf$cp_status[samDf$cp_logic  ]<-"Cross"
@@ -108,8 +109,8 @@ p1 <- ggplot(samDf[order(-samDf$coverage),],
   #theme_bw()+#
   labs(x="Proportion of filtered variants that are heterozygous",
        y=paste0("Number of filtered variants"),
-       fill="Parentage estimate:",
-       size="Peak coverage:",
+       fill="Parentage \nestimate ",
+       size="Peak \ncoverage ",
        title=mainText)+
   geom_vline(xintercept = c(hetPropCutoff2,hetPropCutoff),color=c("forestgreen","purple4"))+
   geom_hline(yintercept = c(totCntCutoff*2,totCntCutoff),color=c("forestgreen","purple4"))+
@@ -123,7 +124,17 @@ p1 <- ggplot(samDf[order(-samDf$coverage),],
         legend.margin=margin(),
         plot.title=element_text(hjust = 0.5,size = 10))
 p2 <- ggMarginal(p1,type="histogram",size=5,bins=100);p1
-ggsave("data/heterozygosity.png",p2,width = 88*2,height = 88*2.2,units = "mm",dpi = 600)
+ggsave("data/heterozygosity.png",p2,width = 88*1.5,height = 88*1.65,units = "mm",dpi = 600)
+
+
+#Adding in the summary statistics and graphics
+
+
+
+
+
+
+
 
 
 #Calculate similarity values across nr / lfm variants
