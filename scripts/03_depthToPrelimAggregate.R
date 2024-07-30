@@ -3,8 +3,8 @@ wd       <- "~/Experiments/PhalFNP"
 depthDir <- "./data_ignored/secondary/depths"
 outDir   <- "./data_ignored/secondary"
 prelimFile <- paste0("prelimAggregateDepths_",format(Sys.time(), "%Y%m%d_%H%M"),".csv")
-totalSteps <- 5
-nCores     <- min(c(20,parallel::detectCores()/2))
+totalSteps <- 10
+nCores     <- min(c(3,parallel::detectCores()/2))
 
 #Setup the environment
 setwd(wd)
@@ -16,7 +16,7 @@ source('./scripts/functions/aggFun1.R')
 
 #Get data
 depthFileList <- lapply(1:totalSteps,function(x){list.files(depthDir,pattern = paste0(x,"of",totalSteps,"int.depth\\.out$"),full.names = T)})
-write.csv(depthFileList,file = "examples/03_depthFileList.csv")
+write.csv(unlist(depthFileList),file = paste0("examples/03_depthFileListOf",totalSteps,".csv"))
 cl <- makeCluster(nCores)
 j<-1
 for(j in 1:length(depthFileList)){

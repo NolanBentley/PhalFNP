@@ -4,11 +4,11 @@ bamPath <- "data_ignored/primary/bam"
 bedPath <- "data_ignored/secondary/bed"
 depthPath <- "data_ignored/secondary/depths"
 fastaPath <- "data_ignored/primary/assembly/phal_assemblyV3.fasta"
-byLen <- 40000
+byLen <- 23750
 buffer <- 2000
 regionWidth <- 5000
-steps       <- 5
-nCores <- 20
+steps       <- 10
+nCores <- 10
 
 #Setup packages
 packageDir <- file.path(wd,"R")
@@ -49,14 +49,18 @@ bamVec   <- fileDf$bam[!fileDf$exist]
 depthVec <- fileDf$depth[!fileDf$exist]
 
 #Generate bed files
+i<-1
 for(i in 1:nrow(initDf)){
-  currDf <- data.frame(chr=initDf$chr[i],min=seq(buffer,initDf[i,2]-buffer,by=byLen),
-                       max=seq(buffer,initDf[i,2]-buffer,by=byLen)+regionWidth)
+  currDf     <- data.frame(chr=initDf$chr[i],min=seq(buffer,initDf[i,2]-buffer-regionWidth,by=byLen)+1)
+  currDf$max <- currDf$min+regionWidth-1
+  currDf     <- currDf[currDf$max<=(initDf[i,2]-buffer),]
   if(i==1){outDf<-currDf
-  }else{outDf<-rbind(outDf,currDf)}
+  }else if(nrow(currDf)>1){
+    outDf<-rbind(outDf,currDf)
+  }
 }
-outDf_split<-outDf
-stepVec <- rep(1:steps,ceiling(nrow(outDf_split)/steps))[1:nrow(outDf_split)]
+
+stepVec <- rep(1:steps,ceiling(nrow(outDf)/steps))[1:nrow(outDf)]
 for(i in 1:length(bedName)){
   write.table(outDf[stepVec==i,],file = bedName[i],row.names = F,col.names = F,quote = F)
 }
@@ -69,7 +73,7 @@ for(i in 1:length(bedName)){
 bedVec<-fileDf$bed
 
 #Summarize bam files analyzed
-write.csv(fileDf,"data/bamFilesInDepth.csv")
+write.csv(fileDf,paste0("data/bamFilesInDepth_",regionWidth/1000,"KbEvery",byLen/1000,"KbFrom",buffer/1000,"Kb.csv"))
 
 #Run depth calculations
 if(length(depthVec)>0){

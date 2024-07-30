@@ -5,8 +5,10 @@ coverageFile <- "data_ignored/secondary/aggDf_SampleValues.csv"
 setwd(wd)
 
 #Load packages
-library(ggExtra)#install.packages("ggExtra")
-library(ggplot2)#install.packages("ggplot2")
+library(ggExtra)
+library(ggplot2)
+library(plotly)
+library(treemap)
 
 #Load data
 source("./scripts/functions/similarityCalc.R")
@@ -100,7 +102,7 @@ samCoverage$match <- match(samCoverage$indMod,samDf$originMod)
 samDf$coverage <- NA
 samDf$coverage[samCoverage$match[!is.na(samCoverage$match)]] <- samCoverage$newSamplePeakMean[!is.na(samCoverage$match)]
 
-#Make a graphic
+#####Make heterozyogsity graphic####
 samDf$cp_status <- "Ambiguous"
 samDf$cp_status[samDf$likelySelf]<-"Self"
 samDf$cp_status[samDf$cp_logic  ]<-"Cross"
@@ -127,8 +129,64 @@ p2 <- ggMarginal(p1,type="histogram",size=5,bins=100);p1
 ggsave("data/heterozygosity.png",p2,width = 88*1.5,height = 88*1.65,units = "mm",dpi = 600)
 
 
-#Adding in the summary statistics and graphics
+###### Make treemap diagram #####
+df2 <- df1[df1$nr,]
+df2$nearGene <- !(is.na(df2$gene)|df2$gene=="")
+df2$code <- paste0(df2$analysis,"|",df2$nearGene,"|",df2$type,"|",df2$impact)
+tab1 <- as.data.frame(table(df2$code))
+tab1$nearGene <- df2$nearGene[match(tab1$Var1,df2$code)]
+tab1$type     <- df2$type    [match(tab1$Var1,df2$code)]
+tab1$impact   <- df2$impact  [match(tab1$Var1,df2$code)]
+tab1$analysis <- df2$analysis[match(tab1$Var1,df2$code)]
 
+ggplot(tab1, aes(area = x, fill = type, label = code)) +
+  geom_treemap() +
+  geom_treemap_text(
+    fontface = "italic",
+    colour = "white",
+    place = "centre",
+    grow = TRUE
+)
+
+plot_ly(
+  type='treemap',
+  ids=tab1$Var1,
+  parents=tab1$type,
+  labels=tab1$analysis
+)
+
+
+ggplot(G20, aes(area = 1, label = country, subgroup = hemisphere,
+                subgroup2 = region, subgroup3 = econ_classification)) +
+  geom_treemap() +
+  geom_treemap_subgroup3_border(colour = "blue", size = 1) +
+  geom_treemap_subgroup2_border(colour = "white", size = 3) +
+  geom_treemap_subgroup_border(colour = "red", size = 5) +
+  geom_treemap_subgroup_text(
+    place = "middle",
+    colour = "red",
+    alpha = 0.5,
+    grow = T
+  ) +
+  geom_treemap_subgroup2_text(
+    colour = "white",
+    alpha = 0.5,
+    fontface = "italic"
+  ) +
+  geom_treemap_subgroup3_text(place = "top", colour = "blue", alpha = 0.5) +
+  geom_treemap_text(colour = "white", place = "middle", reflow = T)
+
+
+df0 <- read.csv('https://raw.githubusercontent.com/plotly/datasets/718417069ead87650b90472464c7565dc8c2cb1c/sunburst-coffee-flavors-complete.csv')
+df0
+fig <- plot_ly(
+  type="treemap",
+  labels=c("Eve", "Cain", "Seth", "Enos", 
+           "Noam", "Abel", "Awan", "Enoch", "Azura"),
+  parents=c("", "Eve", "Eve", "Seth", "Seth",
+            "Eve", "Eve", "Awan", "Eve")
+)
+fig
 
 
 
