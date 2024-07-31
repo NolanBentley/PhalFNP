@@ -11,6 +11,7 @@ aggFun2 <- function(currFile,byLen=NULL,setParentLen=T){
   setkey(x,interval)
   
   dtAgg <- x[, .(avg = mean(V3),med = median(V3),sd = sd(V3),n = .N, minInt = min(V2),maxInt = max(V2)), by = interval]
+  dtAgg$file <- currFile
   return(dtAgg)
 }
 
