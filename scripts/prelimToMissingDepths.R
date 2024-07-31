@@ -1,14 +1,14 @@
 wd <- "~/Experiments/PhalFNP/"
-prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240625_1442.csv"
+prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240731_0022.csv"
 
 #Load data
 setwd(wd)
 aggDf <- read.csv(prelimFile)
 prepareAggDf <- function(x){
-  x$ind           <- gsub("__.*","",basename(x$X))
+  x$ind           <- gsub("__.*","",basename(x$file))
   if(is.null(x$interval_orig)){x$interval_orig <- x$interval}
   x$chr           <- gsub("-.*","",x$interval_orig)
-  x$interval      <- paste0(x$interval_orig,"-",gsub(".*([[:digit:]]+of[[:digit:]]+)int.*","\\1",(x$X)))
+  x$interval      <- paste0(x$interval_orig,"-",gsub(".*([[:digit:]]+of[[:digit:]]+)int.*","\\1",(x$file)))
   x$ind_chr       <- paste0(x$ind,"_",x$chr)
   x$ind_int       <- paste0(x$ind,"_",x$interval)
   return(x)
