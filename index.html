@@ -12,31 +12,32 @@ Panicum hallii fast-neutron population large structural variant explorer
 This website houses interactive plots for exploring large (>>0.2Mb) copy-number variants from the <i>Panicum. hallii</i> fast neutron population (FNP).<br>
 <br>
 <dt>The y-axis values were calculated to approximate ploidy across the x-axis intervals:</dt>
-<dd>- Each point is the transformed median copy-number across a 5x window of 5Kb intervals every 40Kb for an individual line.</dt>
+<dd>- Each point is the transformed median copy-number across a 7x window of 5Kb intervals every 23.75Kb for an individual line.</dt>
 <dd>- Each interval summarizes the mean read depth across a 2.5-5kb range of positions excluding positions with 0 depth.</dd>
+<dd>- This results in each median value being calculated from the mean coverage across 7 regions spanning approximetly 147.5Kb or larger.</dd>
 <dd>- The "copy-number" was estimated by multiplying the mean coverage across the interval by 2 and dividing by the peak mean coverage.</dd><br>
 <dt>This data is visualized with two primary statistics:</dt>
 <dd>- <b>Hexagons:</b> the frequency of bins of position and copy number across the population being visualized.<br></dd>
 <dd>- <b>Points:</b> the normalized-coverage for specific samples subset to only the intervals where the absolute value of the y-axis exceeds certain cutoffs.</dd><br>
-<dd>This implementation removed intervals with no read dpeth, and thus omits homozygous mutations.</dd>  
+<dt>This implementation removed intervals with no read dpeth, and thus omits homozygous mutations.</dt>  
 </p>
 <br><br><b><u>multi-sample multi-chromosome plots</b></u>
 <br>Clicking on points in these plots will take you to that chromosome's multi-sample plot.
 <br>Note: These are large (~40Mb) files and will take a bit to load and render.
 <ul>
-<li><a href="/PhalFNP/depthImages/multiChr/LSVPlot_5x5Kbx40Kb_Chr.html">LSVPlot_5x5Kbx40Kb_Chr.html</a></li>
+<li><a href="/PhalFNP/depthImages/multiChr/LSVPlot_7x5Kbx23.75Kb_Chr.html">LSVPlot_7x5Kbx23.75Kb_Chr.html</a></li>
 </ul><br><br><b><u>multi-sample single-chromosome plots</b></u>
 <br>Clicking on points in these plots will take you to that sample's multi-chromosome plot. Clicking on those points will take you to the single-chromosome plot for that line.
 <ul>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_5x5Kbx40Kb_Chr01.html">LSVPlot_5x5Kbx40Kb_Chr01.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_5x5Kbx40Kb_Chr02.html">LSVPlot_5x5Kbx40Kb_Chr02.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_5x5Kbx40Kb_Chr03.html">LSVPlot_5x5Kbx40Kb_Chr03.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_5x5Kbx40Kb_Chr04.html">LSVPlot_5x5Kbx40Kb_Chr04.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_5x5Kbx40Kb_Chr05.html">LSVPlot_5x5Kbx40Kb_Chr05.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_5x5Kbx40Kb_Chr06.html">LSVPlot_5x5Kbx40Kb_Chr06.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_5x5Kbx40Kb_Chr07.html">LSVPlot_5x5Kbx40Kb_Chr07.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_5x5Kbx40Kb_Chr08.html">LSVPlot_5x5Kbx40Kb_Chr08.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_5x5Kbx40Kb_Chr09.html">LSVPlot_5x5Kbx40Kb_Chr09.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr01.html">LSVPlot_7x5Kbx23.75Kb_Chr01.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr02.html">LSVPlot_7x5Kbx23.75Kb_Chr02.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr03.html">LSVPlot_7x5Kbx23.75Kb_Chr03.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr04.html">LSVPlot_7x5Kbx23.75Kb_Chr04.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr05.html">LSVPlot_7x5Kbx23.75Kb_Chr05.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr06.html">LSVPlot_7x5Kbx23.75Kb_Chr06.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr07.html">LSVPlot_7x5Kbx23.75Kb_Chr07.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr08.html">LSVPlot_7x5Kbx23.75Kb_Chr08.html</a></li>
+<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr09.html">LSVPlot_7x5Kbx23.75Kb_Chr09.html</a></li>
 </ul><br><br><b><u>Single line plots</b></u>
 This section takes you to single-sample plots based on the sample ID.
 <ul>
