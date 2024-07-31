@@ -1,19 +1,20 @@
 #Set variables
 opt <- list() #For storing options
 opt$wd <- "~/Experiments/PhalFNP/"
-opt$prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240625_1442.csv"
+opt$prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240730_1736.csv"
 opt$imageFile  <- "data_ignored/secondary/afterWindow.rimage"
-opt$winDfFile  <- "data_ignored/secondary/windowedNs5x.csv"
-opt$aggDfFile  <- "data_ignored/secondary/aggDf_SampleValues.csv"
+opt$winDfFile  <- "data_ignored/secondary/windowedNs.csv"
+opt$samValFile <- "data_ignored/secondary/aggDf_SampleValues.csv"
+opt$kVal       <- 7
 source("~/Experiments/PhalFNP/scripts/functions/peakFinding.R")
 cuL <- list() #For storing analyses
-
+library(zoo)
 #Setup environment
 setwd(opt$wd)
 
 #Load data
 aggDf <- read.csv(opt$prelimFile)
-aggDf$ind <- gsub("__.*","",basename(aggDf$X))
+aggDf$ind <- gsub("__.*","",basename(aggDf$file))
 aggDf$chr <- gsub("-.*","",aggDf$interval)
 aggDf$interval <- paste0(aggDf$interval,"-",gsub(" ",0,format(aggDf$minInt)))
 aggDf$ind_chr <- paste0(aggDf$ind,"_",aggDf$chr)
@@ -36,8 +37,8 @@ cuL$aggDiffMed <- aggregate(aggDf$pctDiffSkew,by = list(aggDf$interval),median)
 cuL$diffNorm   <- (cuL$aggDiffMed$x-median(cuL$aggDiffMed$x))/mad(cuL$aggDiffMed$x)
 hist((cuL$diffNorm),100000,xlim=c(-40,40))
 abline(v = c(-20,20),col="red")
-cul$intervalLogic2 <- aggDf$interval%in%(cuL$aggDiffMed$Group.1[abs(cuL$diffNorm)<20])
-aggDf <- aggDf[cul$intervalLogic2,]
+cuL$intervalLogic2 <- aggDf$interval%in%(cuL$aggDiffMed$Group.1[abs(cuL$diffNorm)<20])
+aggDf <- aggDf[cuL$intervalLogic2,]
 
 #Find peak depth across each sample
 aggDf$ogSamplePeakMean <- peakFinding(aggDf)
@@ -74,11 +75,12 @@ aggDf$newSamplePeakMean <- peakFinding(aggDf)
 aggDf$n <- aggDf$avg*2/aggDf$newSamplePeakMean
 
 #Save the windowed depths
+
 winL <- list()
-winL$aggWin_mean  <-aggregate(aggDf$n_og  ,by=list(aggDf$ind_chr),zoo::rollmean  ,k=5)
-winL$aggWin_median<-aggregate(aggDf$n_og  ,by=list(aggDf$ind_chr),zoo::rollmedian,k=5)
-winL$aggWin_min   <-aggregate(aggDf$minInt,by=list(aggDf$ind_chr),function(x,k){zoo::rollapply(x,width=k,FUN=min)},k=5)
-winL$aggWin_max   <-aggregate(aggDf$maxInt,by=list(aggDf$ind_chr),zoo::rollmax   ,k=5)
+winL$aggWin_mean  <-aggregate(aggDf$n_og  ,by=list(aggDf$ind_chr),zoo::rollmean  ,k=opt$kVal)
+winL$aggWin_median<-aggregate(aggDf$n_og  ,by=list(aggDf$ind_chr),zoo::rollmedian,k=opt$kVal)
+winL$aggWin_min   <-aggregate(aggDf$minInt,by=list(aggDf$ind_chr),function(x,k){zoo::rollapply(x,width=k,FUN=min)},k=opt$kVal)
+winL$aggWin_max   <-aggregate(aggDf$maxInt,by=list(aggDf$ind_chr),zoo::rollmax   ,k=opt$kVal)
 
 #Assemble aggregated values into a data.frame
 winDf <- data.frame(
@@ -91,9 +93,18 @@ winDf$ind_chr <- unlist(mapply(function(x,y){rep(x,length(y))},x=winL$aggWin_mea
 winDf$id  <- gsub("(^.*)_(.*$)","\\1",gsub("_scaffold","",winDf$ind_chr))
 winDf$chr <- gsub("(^.*)_(.*$)","\\2",winDf$ind_chr)
 
+#Add discriptors to the window file
+hist(diff(aggDf$min),1000)
+winName <- paste0(
+  opt$kVal,"x",
+  median(aggDf$max-aggDf$min+1)/1000,"kbx",
+  median(diff(aggDf$min))/1000,"kb(~",
+  median(winDf$max - winDf$min+1)/1000,"Kb)"
+)
+winDf$winName <- winName
+aggDf$winName <- winName
+
 #Save data
 save.image(file = opt$imageFile)
-
-#Write to a file
-write.csv(winDf,opt$winDfFile)
-write.csv(aggDf[match(unique(aggDf$ind),aggDf$ind),],opt$aggDfFile)
+write.csv(winDf,paste0(gsub("\\.csv$","",opt$winDfFile),"_",winName,".csv"))
+write.csv(aggDf[match(unique(aggDf$ind),aggDf$ind),],paste0(gsub("\\.csv$","",opt$samValFile),"_",winName,".csv"))
