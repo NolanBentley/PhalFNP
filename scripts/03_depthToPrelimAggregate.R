@@ -4,11 +4,12 @@ depthDir <- "./data_ignored/secondary/depths"
 outDir   <- "./data_ignored/secondary"
 prelimFile <- paste0("prelimAggregateDepths_",format(Sys.time(), "%Y%m%d_%H%M"),".csv")
 totalSteps <- 10
-nCores     <- min(c(3,parallel::detectCores()/2))
+nCores     <- min(c(30,floor(parallel::detectCores()/4*3)))
 
 #Setup the environment
 setwd(wd)
 library(parallel)
+library(data.table)
 
 ## Load functions
 # Calculate the mean depth per window (byLen)
