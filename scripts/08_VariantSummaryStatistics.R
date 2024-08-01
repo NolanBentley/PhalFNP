@@ -8,10 +8,10 @@ setwd(wd)
 library(ggExtra)
 library(ggplot2)
 library(plotly)
-library(treemap)
+library(treemap)#install.packages("treemap")
+library(ggvenn)#devtools::install_github("yanlinlin82/ggvenn")
 
 #Load data
-source("./scripts/functions/similarityCalc.R")
 variantFile <- "https://utexas.box.com/shared/static/yht8ojfafsab3btuq6xe2chw8by9onfo.csv"
 df1 <- read.csv(variantFile)
 
@@ -46,4 +46,9 @@ df1$nr <- !duplicated(df1$sample_locusId)
 
 #Detect reoccurring variants
 df1$id_duplicated<-hasDupes(df1$id)
+
+#
+
+
+
 
