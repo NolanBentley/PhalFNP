@@ -36,23 +36,22 @@ trimmedBam <- gsub("\\.bam","",bamVec)
 
 #Create filenames
 byLenText <- paste0(buffer/1000,"Kbuffer_",byLen/1000,"Kint_",regionWidth/1000,"Kwide_",1:steps,"of",steps)
-bedName   <- file.path(getwd(),bedPath,paste0("regions_",byLenText,".bed"))
-fileDf <- data.frame(bam = bamVec)
+
+i<-1
 for(i in 1:length(byLenText)){
-  fileDf[[i+1]]<-file.path(getwd(),depthPath,paste0(basename(trimmedBam),"_",byLenText[i],"int.depth.out"))
+  currDepthOuts <- file.path(getwd(),depthPath,paste0(basename(trimmedBam),"_",byLenText[i],"int.depth.out"))
+  if(i==1){fileDf<-NULL}
+  fileDf <- rbind(fileDf,data.frame(i=i,bam=bamVec,depth=currDepthOuts))
 }
-fileDf <- data.frame(bam = fileDf$bam,depth=as.vector(unlist(fileDf[,2:ncol(fileDf)])))
 
 #Remove files with the files already extant
 fileDf$exist <- file.exists(fileDf$depth)
-bamVec   <- fileDf$bam[!fileDf$exist]
-depthVec <- fileDf$depth[!fileDf$exist]
 
 #Generate bed files
 i<-1
 for(i in 1:nrow(initDf)){
   currDf     <- data.frame(chr=initDf$chr[i],min=seq(buffer,initDf[i,2]-buffer-regionWidth,by=byLen)+1)
-  currDf$max <- currDf$min+regionWidth-1
+  currDf$max <- currDf$min+regionWidth
   currDf     <- currDf[currDf$max<=(initDf[i,2]-buffer),]
   if(i==1){outDf<-currDf
   }else if(nrow(currDf)>1){
@@ -61,6 +60,8 @@ for(i in 1:nrow(initDf)){
 }
 
 stepVec <- rep(1:steps,ceiling(nrow(outDf)/steps))[1:nrow(outDf)]
+bedName   <- file.path(getwd(),bedPath,paste0("regions_",byLenText,".bed"))
+i<-1
 for(i in 1:length(bedName)){
   write.table(outDf[stepVec==i,],file = bedName[i],row.names = F,col.names = F,quote = F)
 }
@@ -68,24 +69,26 @@ for(i in 1:length(bedName)){
 #Add in bed files
 fileDf$bed <- NA
 for(i in 1:length(bedName)){
-  fileDf$bed[grep(paste0("_",i,"of",length(bedName),"int"),fileDf$depth)]<-bedName[i]
+  fileDf$bed[fileDf$i==i]<-bedName[i]
 }
-bedVec<-fileDf$bed
+
+#Generate code
+fileDf$code <- paste0(
+  "samtools depth -b ",fileDf$bed," ", fileDf$bam," > ",fileDf$depth
+)
 
 #Summarize bam files analyzed
+## Assigned core
+fileDf$core <- rep(1:nCores,ceiling(nrow(fileDf)/nCores))[1:nrow(fileDf)]
 write.csv(fileDf,paste0("data/bamFilesInDepth_",regionWidth/1000,"KbEvery",byLen/1000,"KbFrom",buffer/1000,"Kb.csv"))
 
 #Run depth calculations
-if(length(depthVec)>0){
-  library(parallel)
-  currCode <- paste0(
-    "if ! test -f ",depthVec,"; then ",
-    "samtools depth -b ",bedVec," ", bamVec," > ",
-    depthVec, '; echo "########" >> ',depthVec,"; fi"
-  )
-  cl <- makeCluster(nCores)
-  parSapply(cl = cl,X = currCode,FUN = function(x){cat("\n",x,"\n");out <- system(x,wait = T);cat("\n",x," done!\n"); return(c(x,out))})
-  stopCluster(cl)
+i<-1
+dir.create("data_ignored/secondary/depthCode")
+for(i in 1:nCores){
+  currCode <- fileDf$code[!fileDf$exist&fileDf$core==i]
+  currScript <- paste0("data_ignored/secondary/depthCode/depthCode_",i,".sh")
+  write(currCode,file = currScript)
+  if(i==1){outL<-list()}
+  outL[[i]] <- system(paste0("bash ",currScript),wait = F)
 }
-
-print(head(currCode))
