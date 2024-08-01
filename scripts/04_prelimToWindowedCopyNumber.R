@@ -1,23 +1,26 @@
 #Set variables
 opt <- list() #For storing options
 opt$wd <- "~/Experiments/PhalFNP/"
-opt$prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240730_1736.csv"
+opt$prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240731_0022.csv"
 opt$imageFile  <- "data_ignored/secondary/afterWindow.rimage"
 opt$winDfFile  <- "data_ignored/secondary/windowedNs.csv"
 opt$samValFile <- "data_ignored/secondary/aggDf_SampleValues.csv"
 opt$kVal       <- 7
-source("~/Experiments/PhalFNP/scripts/functions/peakFinding.R")
-cuL <- list() #For storing analyses
-library(zoo)
+opt$sourceFile <- "./scripts/functions/peakFinding.R"
+
 #Setup environment
 setwd(opt$wd)
+library(zoo)
+source(opt$sourceFile)
+cuL <- list() #For storing analyses
 
 #Load data
 aggDf <- read.csv(opt$prelimFile)
 aggDf$ind <- gsub("__.*","",basename(aggDf$file))
 aggDf$chr <- gsub("-.*","",aggDf$interval)
-aggDf$interval <- paste0(aggDf$interval,"-",gsub(" ",0,format(aggDf$minInt)))
+#aggDf$interval <- paste0(aggDf$interval,"-",gsub(" ",0,format(aggDf$minInt)))
 aggDf$ind_chr <- paste0(aggDf$ind,"_",aggDf$chr)
+aggDf$ind_int <- paste0(aggDf$ind,"_",aggDf$interval)
 aggDf <- aggDf[order(aggDf$ind,aggDf$chr,aggDf$minInt),]
 aggDf$order <- 1:nrow(aggDf)
 

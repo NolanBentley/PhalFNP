@@ -1,6 +1,9 @@
 peakFinding <- function(x){
+  print("Finding medians")
   indOgMedians <- aggregate(x$avg,by=list(x$ind),median)
+  print("Finding means")
   indOgMean    <- aggregate(x$avg,by=list(x$ind),mean  )
+  print("Finding mad")
   indOgMad     <- aggregate(x$avg,by=list(x$ind),mad)
   uniInd <- indOgMedians$Group.1
   if(any(indOgMedians$x<20)){warning("Low og medians present!")}

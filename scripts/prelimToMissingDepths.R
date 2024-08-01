@@ -1,23 +1,44 @@
-wd <- "~/Experiments/PhalFNP/"
-prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240731_0022.csv"
+#Set variables
+opt <- list() #For storing options
+opt$wd <- "~/Experiments/PhalFNP/"
+opt$prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240731_0022.csv"
+opt$imageFile  <- "data_ignored/secondary/afterWindow.rimage"
+opt$winDfFile  <- "data_ignored/secondary/windowedNs.csv"
+opt$samValFile <- "data_ignored/secondary/aggDf_SampleValues.csv"
+opt$kVal       <- 7
+opt$sourceFile <- "./scripts/functions/peakFinding.R"
+
+#Setup environment
+setwd(opt$wd)
+library(zoo)
+source(opt$sourceFile)
+cuL <- list() #For storing analyses
 
 #Load data
-setwd(wd)
-aggDf <- read.csv(prelimFile)
-prepareAggDf <- function(x){
-  x$ind           <- gsub("__.*","",basename(x$file))
-  if(is.null(x$interval_orig)){x$interval_orig <- x$interval}
-  x$chr           <- gsub("-.*","",x$interval_orig)
-  x$interval      <- paste0(x$interval_orig,"-",gsub(".*([[:digit:]]+of[[:digit:]]+)int.*","\\1",(x$file)))
-  x$ind_chr       <- paste0(x$ind,"_",x$chr)
-  x$ind_int       <- paste0(x$ind,"_",x$interval)
-  return(x)
-}
-aggDf <- prepareAggDf(aggDf)
-aggDf <- aggDf[order(aggDf$chr,aggDf$minInt,aggDf$ind),]
+aggDf <- read.csv(opt$prelimFile)
+aggDf$ind <- gsub("__.*","",basename(aggDf$file))
+aggDf$chr <- gsub("-.*","",aggDf$interval_og)
+#aggDf$interval <- paste0(aggDf$interval_og,"-",gsub(" ",0,format(aggDf$minInt)))
+aggDf$ind_chr <- paste0(aggDf$ind,"_",aggDf$chr)
+aggDf$ind_int <- paste0(aggDf$ind,"_",aggDf$interval)
+aggDf <- aggDf[order(aggDf$ind,aggDf$chr,aggDf$minInt),]
 aggDf$order <- 1:nrow(aggDf)
 
-hist(table(aggDf$interval),1000)
+#Check for duplicates
+aggDf$ind_int_duped <- aggDf$ind_int%in%(aggDf$ind_int[duplicated(aggDf$ind_int)])
+aggDf <- aggDf[!duplicated(aggDf$ind_int),]
+
+#Remove errors
+aggDf <- aggDf[!(is.na(aggDf$avg)|is.na(aggDf$sd)),]
+
+#Remove intervals with fewer than half samples characterized more than half the length
+aggDf$nOverMin <- aggDf$n>=(0.5*max(aggDf$n))
+cuL$interval_n <- aggregate(aggDf$interval[aggDf$nOverMin],by=list(aggDf$interval[aggDf$nOverMin]),length)
+cuL$nProp      <- cuL$interval_n$x/max(cuL$interval_n$x)
+hist(cuL$nProp,1000)
+cuL$keptIntervals <- cuL$interval_n$Group.1[cuL$nProp<0.9]
+cuL$intervalLogic <- aggDf$interval%in%cuL$keptIntervals; print(mean(cuL$intervalLogic))
+aggDf <- aggDf[cuL$intervalLogic,]
 
 #Add in missing intervals
 ## Generate missing combos
@@ -27,15 +48,24 @@ missingCombos <- aggregate(aggDf$interval,by=list(aggDf$ind),function(x,y){which
 missingCombosList <- missingCombos$x
 names(missingCombosList)<-paste0(missingCombos$Group.1,"zzzz")
 missingCombos2 <- unlist(missingCombosList)
+
 ## Built data to add
-missComboDf<-data.frame(X = paste0(gsub("zzzz.*","",names(missingCombos2)),"__",uniInt[missingCombos2],"int"))
+missComboDf<-data.frame(file = paste0(gsub("zzzz.*","",names(missingCombos2)),"__",uniInt[missingCombos2],"int"))
 missComboDf$interval<-gsub("(.*)(-.of.)","\\1",uniInt[missingCombos2])
+missComboDf$ind <- gsub("__.*","",basename(missComboDf$file))
+missComboDf$chr <- gsub("-.*","",missComboDf$interval)
+missComboDf$interval <- paste0(missComboDf$interval,"-",gsub(" ",0,format(missComboDf$minInt)))
+aggDf$ind_chr <- paste0(aggDf$ind,"_",aggDf$chr)
+aggDf$ind_int <- paste0(aggDf$ind,"_",aggDf$interval)
+aggDf <- aggDf[order(aggDf$ind,aggDf$chr,aggDf$minInt),]
+aggDf$order <- 1:nrow(aggDf)
+
 missComboDf<-prepareAggDf(missComboDf)
-missComboDf$interval
 missComboDf$avg <- 0
 missComboDf$med <- 0
 missComboDf$sd  <- NA
 missComboDf$n   <- 0
+
 ## Add in certain values
 aggInt          <- aggregate(aggDf$n     ,list(aggDf$interval),median)
 aggInt$minInt   <- aggregate(aggDf$minInt,list(aggDf$interval),min   )$x
@@ -43,17 +73,25 @@ aggInt$maxInt   <- aggregate(aggDf$maxInt,list(aggDf$interval),max   )$x
 missComboDf$rowInAggInt <- match(missComboDf$interval,aggInt$Group.1)
 missComboDf$minInt <- aggInt$minInt[missComboDf$rowInAggInt]
 missComboDf$maxInt <- aggInt$maxInt[missComboDf$rowInAggInt]
-## Checking inputs
-if(!all(missComboDf$ind%in%aggDf$ind&missComboDf$chr%in%aggDf$chr)){stop("Something went wrong!")}
-## Add in the fake data
-aggDf2 <- merge(x = aggDf,y = missComboDf, all= T)
 
+## Add in the fake data
+if(!all((missComboDf$ind%in%aggDf$ind)&(missComboDf$chr%in%aggDf$chr))){
+  stop("Something went wrong!")
+}else{
+  aggDf2 <- merge(x = aggDf,y = missComboDf, all= T)
+}
+
+#Add in peak values
+aggDf$ogSamplePeakMean <- peakFinding(aggDf)
 
 # Remove intervals with low overall n-values
 int_n <- aggregate(aggDf2$n,by=list(aggDf2$interval),median)
 hist(int_n$x,1000,ylim=c(0,200)); abline(v = 4500,col="red")
 aggDf2$IntervalNLogic <- aggDf2$interval%in%int_n$Group.1[int_n$x>4500]
-aggDf <- aggDf2[aggDf2$IntervalNLogic,]
+aggDf3 <- aggDf2[aggDf2$IntervalNLogic,]
+
+
+#### Stopped here I think?
 
 # Roll the means
 ?zoo::rollmedian
