@@ -1,7 +1,7 @@
 #Set variables
 opt <- list() #For storing options
 opt$wd <- "~/Experiments/PhalFNP/"
-opt$prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240731_0022.csv"
+opt$prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240805_1547.csv"
 opt$imageFile  <- "data_ignored/secondary/afterWindow.rimage"
 opt$winDfFile  <- "data_ignored/secondary/windowedNs.csv"
 opt$samValFile <- "data_ignored/secondary/aggDf_SampleValues.csv"
@@ -17,8 +17,10 @@ cuL <- list() #For storing analyses
 #Load data
 aggDf <- read.csv(opt$prelimFile)
 aggDf$ind <- gsub("__.*","",basename(aggDf$file))
+aggDf$interval_og <- aggDf$interval
 aggDf$chr <- gsub("-.*","",aggDf$interval_og)
-#aggDf$interval <- paste0(aggDf$interval_og,"-",gsub(" ",0,format(aggDf$minInt)))
+aggDf$step <- as.numeric(gsub("of.*","",gsub(".*_|int\\.depth\\.out$","",aggDf$file)))
+aggDf$interval <- paste0(aggDf$interval_og,"_",gsub(" ","0",format(aggDf$step)))
 aggDf$ind_chr <- paste0(aggDf$ind,"_",aggDf$chr)
 aggDf$ind_int <- paste0(aggDf$ind,"_",aggDf$interval)
 aggDf <- aggDf[order(aggDf$ind,aggDf$chr,aggDf$minInt),]
@@ -26,17 +28,18 @@ aggDf$order <- 1:nrow(aggDf)
 
 #Check for duplicates
 aggDf$ind_int_duped <- aggDf$ind_int%in%(aggDf$ind_int[duplicated(aggDf$ind_int)])
-aggDf <- aggDf[!duplicated(aggDf$ind_int),]
+sum(aggDf$ind_int_duped)
 
 #Remove errors
+sum((is.na(aggDf$avg)|is.na(aggDf$sd)))
 aggDf <- aggDf[!(is.na(aggDf$avg)|is.na(aggDf$sd)),]
 
 #Remove intervals with fewer than half samples characterized more than half the length
 aggDf$nOverMin <- aggDf$n>=(0.5*max(aggDf$n))
 cuL$interval_n <- aggregate(aggDf$interval[aggDf$nOverMin],by=list(aggDf$interval[aggDf$nOverMin]),length)
 cuL$nProp      <- cuL$interval_n$x/max(cuL$interval_n$x)
-hist(cuL$nProp,1000)
-cuL$keptIntervals <- cuL$interval_n$Group.1[cuL$nProp<0.9]
+hist(cuL$nProp,1000,ylim=c(0,100))
+cuL$keptIntervals <- cuL$interval_n$Group.1[cuL$nProp>0.9]
 cuL$intervalLogic <- aggDf$interval%in%cuL$keptIntervals; print(mean(cuL$intervalLogic))
 aggDf <- aggDf[cuL$intervalLogic,]
 

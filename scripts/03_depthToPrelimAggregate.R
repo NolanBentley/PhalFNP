@@ -4,7 +4,7 @@ depthDir <- "./data_ignored/secondary/depths"
 outDir   <- "./data_ignored/secondary"
 prelimFile <- paste0("prelimAggregateDepths_",format(Sys.time(), "%Y%m%d_%H%M"),".csv")
 totalSteps <- 10
-nCores     <- min(c(30,floor(parallel::detectCores()/4*3)))
+nCores     <- min(c(20,floor(parallel::detectCores()/4*3)))
 
 #Setup the environment
 setwd(wd)
@@ -25,12 +25,18 @@ for(j in 1:length(depthFileList)){
   byLen <- NULL #Triggers aggFun1 to recalculate each step
   cat("\n\n\n",j,"\n")
   currDepthFiles <- depthFileList[[j]]
-  #currDepthFiles<-currDepthFiles[1:40]
   parOut   <- parallel::parSapply(cl,currDepthFiles,aggFun2,simplify = F)
   parOutDf <- do.call("rbind",parOut)
-  #View(parOutDf)
   aggDf <- rbind(aggDf,parOutDf)
 }
 write.csv(aggDf,file = file.path(outDir,prelimFile))
 stopCluster(cl)
 
+#Check work
+chkL <- list()
+chkL$uniFiles <- unique(aggDf$file)
+chkL$uniFiles_sub <- uniFiles[grep("_9._",chkL$uniFiles)]
+chkL$uniFiles_sM  <- match(chkL$uniFiles_sub,aggDf$file)
+chkL$subDf <- aggDf[chkL$uniFiles_sM,]
+chkL$subDf$step <- as.numeric(gsub("of.*","",gsub(".*_|int\\.depth\\.out$","",chkL$subDf$file)))
+View(chkL$subDf)
