@@ -53,183 +53,125 @@ names(missingCombosList)<-paste0(missingCombos$Group.1,"zzzz")
 missingCombos2 <- unlist(missingCombosList)
 
 ## Built data to add
-missComboDf<-data.frame(file = paste0(gsub("zzzz.*","",names(missingCombos2)),"__",uniInt[missingCombos2],"int"))
-missComboDf$interval<-gsub("(.*)(-.of.)","\\1",uniInt[missingCombos2])
-missComboDf$ind <- gsub("__.*","",basename(missComboDf$file))
-missComboDf$chr <- gsub("-.*","",missComboDf$interval)
-missComboDf$interval <- paste0(missComboDf$interval,"-",gsub(" ",0,format(missComboDf$minInt)))
-aggDf$ind_chr <- paste0(aggDf$ind,"_",aggDf$chr)
-aggDf$ind_int <- paste0(aggDf$ind,"_",aggDf$interval)
-aggDf <- aggDf[order(aggDf$ind,aggDf$chr,aggDf$minInt),]
-aggDf$order <- 1:nrow(aggDf)
-
-missComboDf<-prepareAggDf(missComboDf)
-missComboDf$avg <- 0
-missComboDf$med <- 0
-missComboDf$sd  <- NA
-missComboDf$n   <- 0
-
-## Add in certain values
-aggInt          <- aggregate(aggDf$n     ,list(aggDf$interval),median)
-aggInt$minInt   <- aggregate(aggDf$minInt,list(aggDf$interval),min   )$x
-aggInt$maxInt   <- aggregate(aggDf$maxInt,list(aggDf$interval),max   )$x
-missComboDf$rowInAggInt <- match(missComboDf$interval,aggInt$Group.1)
-missComboDf$minInt <- aggInt$minInt[missComboDf$rowInAggInt]
-missComboDf$maxInt <- aggInt$maxInt[missComboDf$rowInAggInt]
+aggDf$status<-"Observed"
+simDf <- expand.grid(ind=unique(aggDf$ind),interval=unique(aggDf$interval))
+simDf$avg <- 0
+simDf$med <- 0
+simDf$step <- gsub(".*_","",simDf$interval)
+simDf$chr  <- gsub("-.*","",simDf$interval)
+simDf$ind_chr <- paste0(simDf$ind,"_",simDf$chr)
+simDf$ind_int <- paste0(simDf$ind,"_",simDf$interval)
+simDf$order <- 1:nrow(simDf)
+simDf$status <- "Sim"
+simDf$X <- NA
+simDf$sd <- NA
+simDf$n <- 0
+simDf$minInt <- NA
+simDf$maxInt <- NA
+simDf$file <- NA
+simDf$interval_og <- NA
+simDf$ind_int_duped <- NA
+simDf$nOverMin <- NA
+simDf <- simDf[!simDf$ind_int%in%aggDf$ind_int,]
 
 ## Add in the fake data
-if(!all((missComboDf$ind%in%aggDf$ind)&(missComboDf$chr%in%aggDf$chr))){
-  stop("Something went wrong!")
+if(!all(colnames(simDf)%in%colnames(aggDf))){
+  stop("Check colnames!")
 }else{
-  aggDf2 <- merge(x = aggDf,y = missComboDf, all= T)
+  aggDf2 <- merge(x = aggDf,y = simDf, all= T)
 }
 
-#Add in peak values
+#####Add analysis values where needed####
+#Find sample peaks
 aggDf$ogSamplePeakMean <- peakFinding(aggDf)
+samDf <- data.frame(ind=unique(aggDf$ind))
+samDf$ogSamplePeakMean  <- aggDf$ogSamplePeakMean[match(samDf$ind,aggDf$ind)]
+aggDf2$ogSamplePeakMean <- samDf$ogSamplePeakMean[match(aggDf2$ind,samDf$ind)]
 
-# Remove intervals with low overall n-values
-int_n <- aggregate(aggDf2$n,by=list(aggDf2$interval),median)
-hist(int_n$x,1000,ylim=c(0,200)); abline(v = 4500,col="red")
-aggDf2$IntervalNLogic <- aggDf2$interval%in%int_n$Group.1[int_n$x>4500]
-aggDf3 <- aggDf2[aggDf2$IntervalNLogic,]
+#Calculate CN
+aggDf2$cn <- aggDf2$avg*2/aggDf2$ogSamplePeakMean
 
+#Find interval min and max pos
+intDf     <- aggregate(aggDf$minInt,by=list(aggDf$interval),min)
+intDf$max <- aggregate(aggDf$maxInt,by=list(aggDf$interval),max)$x
+needMin <- is.na(aggDf2$minInt)
+aggDf2$minInt[needMin]<- intDf$x  [match(aggDf2$interval[needMin],intDf$Group.1)]
+aggDf2$maxInt[needMin]<- intDf$max[match(aggDf2$interval[needMin],intDf$Group.1)]
 
-#### Stopped here I think?
+#Remove intervals with low overall n-values
+int_n   <- aggregate(aggDf2$n  ,by=list(aggDf2$interval),median)
+hist(int_n$x ,1000,ylim=c(0,200)); abline(v = max(int_n$x)*0.9,col="red")
+aggDf2$nLogic <- aggDf2$interval%in%(int_n$Group.1[int_n$x>=max(int_n$x)*0.9])
+aggDf3 <- aggDf2[aggDf2$nLogic,]
 
-# Roll the means
-?zoo::rollmedian
-aggDf         <- aggDf[order(aggDf$chr,aggDf$minInt,aggDf$ind),]
-aggRollMedian <- aggregate(aggDf$avg,by=list(aggDf$ind_chr),zoo::rollmedian,k=5,fill="extend")
+#Remove intervals with unusual median CNs
+#int_cn  <- aggregate(aggDf2$cn[aggDf2$nLogic],by=list(aggDf2$interval[aggDf2$nLogic]) ,median)
+#hist(int_cn$x,10000,xlim=c(0,10)); abline(v = c(1.5,2.5),col="red")
+#aggDf2$cnLogic  <- aggDf2$interval%in%(int_n$Group.1[int_cn$x>=1.5&int_cn$x<=2.5])
+#aggDf3 <- aggDf2[aggDf2$cnLogic,]
 
-for(i in 1:length(aggRollMedian)){
-  if(i==1){outDf <- NULL}
-  currLine <- aggRollMedian[[i]]
-  for(j in 1:length(currLine$x)){
-    outDf<-rbind(outDf,data.frame(i,j,sample=names(avgDepthMat_rolled)[i],chr=currLine$Group.1[j],median=currLine$x[[j]]))
-  }
-  print(i)
+#Report values
+c(dims=dim(aggDf3),
+  minInt=min(table(aggDf3$interval)),maxInt=max(table(aggDf3$interval)),
+  minInd=min(table(aggDf3$ind))     ,maxInd=max(table(aggDf3$ind))
+)
+
+#Remove loci with median n_og away from diploid by more than half a copy number 
+## Remove ID_Chr combos with different distributions to handle anueploidies
+cuL$aggCnMean <- aggregate(abs(aggDf3$cn-2),by=list(aggDf3$ind_chr),mean)
+cuL$aggCnMean$chr <- as.numeric(gsub(".*_|Chr","",cuL$aggCnMean$Group.1))
+hist(cuL$aggCnMean$x,100000,ylim=c(0,100),xlim=c(0,10))
+cuL$perChrIndRank <- aggregate(cuL$aggCnMean$x,by=list(cuL$aggCnMean$chr),rank,ties.method="random")
+cuL$aggCnMean$rank<-NA
+for(i in 1:nrow(cuL$perChrIndRank)){
+  cuL$aggCnMean$rank[cuL$aggCnMean$chr==cuL$perChrIndRank$Group.1[i]] <- cuL$perChrIndRank$x[[i]]
 }
+cuL$LowOffDiploid_ind_chr<- cuL$aggCnMean$Group.1[cuL$aggCnMean$rank<quantile(cuL$aggCnMean$rank,0.8)]
+aggDf3$offDipLogic <- aggDf3$ind_chr%in%cuL$LowOffDiploid_ind_chr
 
-outDf_meds <- aggregate(outDf$median,by=list(outDf$sample),median)
-outDf$sample_median <- outDf_meds$x[match(outDf$sample,outDf_meds$Group.1)]
-outDf$normN <- outDf$median*2/outDf$sample_median
-hist(outDf$normN,1000,ylim=c(0,1000))
+## Calculate and subset
+cuL$aggCnIntMedian <- aggregate(aggDf3$cn[aggDf3$offDipLogic],by=list(aggDf3$interval[aggDf3$offDipLogic]),median)
+hist(abs(cuL$aggCnIntMedian$x-2),100000,xlim = c(0,10),ylim=c(0,100));abline(v = 0.5,col="red")
+cuL$offDiploidLogic <- aggDf3$interval%in%(cuL$aggCnIntMedian$Group.1[abs(cuL$aggCnIntMedian$x-2)<0.5])
+mean(cuL$offDiploidLogic)
+aggDf3 <- aggDf3[cuL$offDiploidLogic,]
 
-homoDel <- outDf[outDf$normN<0.5,]
+#Recalculate peaks
+aggDf3$newSamplePeakMean <- peakFinding(aggDf3)
+aggDf3$cn <- aggDf3$avg*2/aggDf3$newSamplePeakMean
 
-homoDel
+#Save the windowed depths
+aggDf3 <- aggDf3[order(aggDf3$ind,aggDf3$chr,aggDf3$interval),]
+winL <- list()
+winL$aggWin_mean  <-aggregate(aggDf3$cn    ,by=list(aggDf3$ind_chr),zoo::rollmean  ,k=opt$kVal)
+winL$aggWin_median<-aggregate(aggDf3$cn    ,by=list(aggDf3$ind_chr),zoo::rollmedian,k=opt$kVal)
+winL$aggWin_min   <-aggregate(aggDf3$minInt,by=list(aggDf3$ind_chr),function(x,k){zoo::rollapply(x,width=k,FUN=min)},k=opt$kVal)
+winL$aggWin_max   <-aggregate(aggDf3$maxInt,by=list(aggDf3$ind_chr),zoo::rollmax   ,k=opt$kVal)
 
-########## old 
-'
-#Remove missing values and regions with missing measurements
-#aggDf <- aggDf[!(is.na(aggDf$avg)|is.na(aggDf$sd)),]
-#aggDf <- aggDf[aggDf$n>=(0.5*max(aggDf$n)),] #This means this method will not work for homozygous deletions
+#Assemble aggregated values into a data.frame
+winDf <- data.frame(
+  mean  = do.call("c",winL$aggWin_mean$x  ),
+  median= do.call("c",winL$aggWin_median$x),
+  min   = do.call("c",winL$aggWin_min$x   ),
+  max   = do.call("c",winL$aggWin_max$x   )
+)
+winDf$ind_chr <- unlist(mapply(function(x,y){rep(x,length(y))},x=winL$aggWin_mean$Group.1,y=winL$aggWin_mean$x))
+winDf$id  <- gsub("(^.*)_(.*$)","\\1",gsub("_scaffold","",winDf$ind_chr))
+winDf$chr <- gsub("(^.*)_(.*$)","\\2",winDf$ind_chr)
 
-#Remove regions with strongly skewed distributions
-aggDf$meanMinusMedian <- (aggDf$avg - aggDf$med)
-aggDiffMed <- aggregate(abs(aggDf$meanMinusMedian),by = list(aggDf$interval),median)
-diffNorm <- (aggDiffMed$x-median(aggDiffMed$x))/mad(aggDiffMed$x)
-hist(diffNorm,100000,xlim=c(-20,20))
-aggDf <- aggDf[aggDf$interval%in%(aggDiffMed$Group.1[diffNorm<20]),]
+#Add discriptors to the window file
+hist(diff(aggDf3$min),1000)
+winName <- paste0(
+  opt$kVal,"x",
+  median(aggDf3$max-aggDf3$min+1)/1000,"Kbx",
+  median(diff(aggDf3$min))/1000,"Kb_",
+  median(winDf$max - winDf$min+1)/1000,"Kb"
+)
+winDf$winName <- winName
+aggDf3$winName <- winName
 
+#Save data
+save.image(file = opt$imageFile)
+write.csv(winDf,paste0(gsub("\\.csv$","",opt$winDfFile),"_",winName,".csv"))
+write.csv(aggDf3[match(unique(aggDf3$ind),aggDf3$ind),],paste0(gsub("\\.csv$","",opt$samValFile),"_",winName,".csv"))
 
-#Begin transformations
-## Calculate sample distribution
-aggMedian <- aggregate(aggDf$avg,by=list(aggDf$ind),median)
-aggMad    <- aggregate(aggDf$avg,by=list(aggDf$ind),mad   )
-
-aggDf$sampleMedian<-aggMedian$x[match(aggDf$ind,aggMedian$Group.1)]
-aggDf$sampleMad   <-aggMad$x[match(aggDf$ind,aggMad$Group.1)]
-
-## Normalize by robust sample distribution
-aggDf$avg_samNorm <- (aggDf$avg-aggDf$sampleMedian)/aggDf$sampleMad
-
-## Calculate interval distribution
-regMedian <- aggregate(aggDf$avg_samNorm,by=list(aggDf$interval),median)
-regMad    <- aggregate(aggDf$avg_samNorm,by=list(aggDf$interval),mad   )
-aggDf$regMedian<-regMedian$x[match(aggDf$interval,regMedian$Group.1)]
-aggDf$regMad   <-regMad$x[match(aggDf$interval,regMad$Group.1)]
-
-## Center by interval mean
-aggDf$avg_FullNorm <- (aggDf$avg_samNorm-aggDf$regMedian)
-aggDf$avg_FullNorm_Trimmed <- aggDf$avg_FullNorm
-aggDf$avg_FullNorm_Trimmed[aggDf$regMad>10] <- NA
-
-#Roll acros windows
-aggDf2<-aggDf[!is.na(aggDf$avg_FullNorm_Trimmed),]
-aggDf2_rollMea<-aggregate(aggDf2$avg_FullNorm_Trimmed,by=list(aggDf2$ind_chr),zoo::rollmean,k=5)
-aggDf2_rollMed<-aggregate(aggDf2$avg_FullNorm_Trimmed,by=list(aggDf2$ind_chr),zoo::rollmedian,k=5)
-aggDf2_rollMin<-aggregate(aggDf2$minInt,by=list(aggDf2$ind_chr),FUN=function(x){zoo::rollapply(x,width=5,FUN=min)})
-aggDf2_rollMax<-aggregate(aggDf2$maxInt,by=list(aggDf2$ind_chr),zoo::rollmax,k=5)
-
-#install.packages(c("plotly","htmlwidgets","ggplot2"))
-
-dir.create("data_ignored/secondary/depthImages/")
-library(ggplot2)
-library(plotly)
-library(htmlwidgets)
-
-minValue <- min(unlist(lapply(aggDf2_rollMed$x,min,na.rm=T)))
-maxValue <- max(unlist(lapply(aggDf2_rollMed$x,max,na.rm=T)))
-maxPos   <- max(unlist(lapply(aggDf2_rollMax$x,max,na.rm=T)))
-for(i in 1:nrow(aggDf2_rollMea)){
-  if(i==1){
-    outDf <- NULL
-  }
-  if(is.null(aggDf2_rollMed$x[[i]][1])){next}
-  currDf <- data.frame(
-    i = i,
-    id = gsub("(^.*)_(.*$)","\\1",aggDf2_rollMed$Group.1[i]),
-    chr = gsub("(^.*)_(.*$)","\\2",aggDf2_rollMed$Group.1[i]),
-    median = aggDf2_rollMed$x[[i]],
-    mean   = aggDf2_rollMea$x[[i]],
-    min    = aggDf2_rollMin$x[[i]],
-    max    = aggDf2_rollMax$x[[i]]
-  )
-  outDf <- rbind(outDf,currDf)
-  if(i%%1000==1){print(i)}
-}
-
-write.csv(outDf,"data_ignored/secondary/windowedDepths5x.csv")
-outDf2 <- outDf[abs(outDf$median)>3&grepl("Chr",outDf$chr),]
-p2 <- ggplot(outDf2,
-             aes((max+min)/2000000,median,color=id))+
-  geom_point()+
-  guides(color="none")+
-  theme_bw()+
-  facet_wrap(~chr,ncol = 3)+
-  labs(title="All",x="Mbp",y="Median of 5x avg coverage across 5Kbp most 40Kbp")
-
-htmlwidgets::saveWidget(plotly::ggplotly(p2),
-                        file=paste0("data_ignored/secondary/above3.html"))
-
-uniChr<-sort(unique(outDf2$chr))
-for(i in 1:length(uniChr)){
-  p2 <- ggplot(outDf2[outDf2$chr==uniChr[i],],
-               aes((max+min)/2000000,median,color=id,fill=max-min+1))+
-    geom_point()+
-    guides(color="none")+
-    theme_bw()+
-    facet_wrap(~chr,ncol = 3)+
-    labs(title="All",x="Mbp",y="Median of 5x avg coverage across 5Kbp most 40Kbp")
-  
-  htmlwidgets::saveWidget(plotly::ggplotly(p2),
-                          file=paste0("data_ignored/secondary/above3_",uniChr[i],".html"))
-  print(i)
-}
-
-
-for(i in unique(outDf2$i)){ 
-  p1 <- ggplot(currDf,aes((max+min)/2000000,median,color=max-min+1))+
-    geom_line(color="black")+
-    geom_point()+
-    scale_color_viridis_c()+
-    theme_bw()+
-    coord_cartesian(xlim=c(0,maxPos),ylim=c(minValue,maxValue))+
-    labs(title=aggDf2_rollMed$Group.1[i],x="Mbp",y="Median of 5x avg coverage across 5Kbp most 40Kbp")
-  
-  htmlwidgets::saveWidget(plotly::ggplotly(p1),
-                          file=paste0("data_ignored/secondary/depthImages/",aggDf2_rollMed$Group.1[i],".html"))
-  print(i)
-}
-'

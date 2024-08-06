@@ -1,7 +1,7 @@
 #### Setup environment ####
 ##### Variables ####
 wd <- "~/Experiments/PhalFNP/"
-winFile <- "data_ignored/secondary/windowedNs5x.csv"
+winFile <- "data_ignored/secondary/windowedNs_7x5Kbx23.75Kb_147.5Kb.csv"
 outDir  <- "./depthImages/"
 
 ##### Load data ####
@@ -17,9 +17,8 @@ library(ggh4x)#install.packages("ggh4x")
 winDf <- read.csv(winFile)
 
 winName <- paste0(unique(winDf$winName),collapse = "|")
-if(winName=="7x4.999kbx23.75kb(~147.499Kb)"){
-  winName <- "7x5Kbx23.75Kb"
-}
+if(winName=="7x4.999kbx23.75kb(~147.499Kb)"){winName <- "7x5Kbx23.75Kb"}
+if(winName=="7x5Kbx23.75Kb_147.5Kb"){winName <- "7x5Kbx23.75Kb"}
 
 
 ##### Format id ####
