@@ -1,7 +1,7 @@
 ###Setup####
 #Set variables
-wd <- "~/Experiments/PhalFNP/"
-winFile <- "data_ignored/secondary/windowedNs_7x4.999kbx23.75kb(~147.499Kb).csv"
+wd <- "~/Experiments/PhalFNP/"; setwd(wd)
+winFile <- "data_ignored/secondary/windowedNs_7x5Kbx23.75Kb_147.5Kb.csv"
 toggleFilterToChr      <- T
 toggleFilterToExisting <- T
 
@@ -12,6 +12,7 @@ setwd(wd)
 if(!exists("winDf")){winDf<-read.csv(winFile)}
 winDf2 <- winDf
 if(toggleFilterToChr){
+  winDf2$chrLogic <- grepl("Chr",winDf2$chr)
   winDf2 <- winDf2[winDf2$chrLogic,]
 }
 
