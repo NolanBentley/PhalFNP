@@ -1,7 +1,7 @@
 #Set variables
 opt <- list() #For storing options
 opt$wd <- "~/Experiments/PhalFNP/"
-opt$prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240731_0022.csv"
+opt$prelimFile <- "data_ignored/secondary/prelimAggregateDepths_20240805_1547.csv"
 opt$imageFile  <- "data_ignored/secondary/afterWindow.rimage"
 opt$winDfFile  <- "data_ignored/secondary/windowedNs.csv"
 opt$samValFile <- "data_ignored/secondary/aggDf_SampleValues.csv"
