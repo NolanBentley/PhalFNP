@@ -1,4 +1,4 @@
-aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 1000000){
+aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 12000){
   library(ggplot2)
   library(hexbin)
   library(ggh4x)
@@ -25,7 +25,10 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 1000000){
   genes$yOffset <- genes$yOffset - min(genes$yOffset)
   genes$yOffset <- -genes$yOffset - 0.5
   
-  i<-7
+  #Load assembly data
+  #### TO DO ####
+  
+  i<-1
   for(i in 1:length(uniFiles)){
     currFile  <- uniFiles[i]
     currDf_i    <- plottedDf   [fileVec   ==currFile,]
@@ -33,7 +36,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 1000000){
     uniChr    <- unique(plottedDf$chr[fileVec==currFile])
     
     #Modify if scaffold
-    if(length(uniChr)&uniChr[1]=="scaffold"){
+    if(length(uniChr)==1 & uniChr[1]=="scaffold"){
       currDf_i$chr      <- currDf_i$chr_orig
       currDfSub_i$chr   <- currDfSub_i$chr_orig
       uniChr            <- unique(plottedDf$chr_orig[fileVec==currFile])
@@ -43,8 +46,8 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 1000000){
     currDf_i$id    <- as.factor(currDf_i$id)
     currDfSub_i$id <- factor(currDfSub_i$id,levels=levels(currDf_i$id))
     
-    xLims <- c(min(c(0,currDf_i$IntervalMidpoint_Mbp)),max(currDf_i$IntervalMidpoint_Mbp))
-    yLims <- c(min(c(0,genes$yOffset,currDf_i$median)),max(c(currDf_i$median)+0.1*(max(currDf_i$median)-min(currDf_i$median)),8))
+    xLims <- c(min(c(0,min(currDf_i$IntervalMidpoint_Mbp))),max(c(max(currDf_i$IntervalMidpoint_Mbp),1)))
+    yLims <- c(min(c(0,genes$yOffset,currDf_i$median)),max(c(max(currDf_i$median)+0.1*(max(currDf_i$median)-min(currDf_i$median)),8)))
     
     j<-1
     for(j in 1:length(uniChr)){
@@ -58,9 +61,13 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 1000000){
                                     text = sprintf("Count per id: %0.5f", round(..count../length(unique(currDf$id)),2))))+
         theme_bw()+
         guides(color="none")+
+        geom_hline(yintercept = 2,color="red")+
         labs(x="Interval midpoint (Mbp)\n ",y="\n Median(average read depth)")+
         scale_x_continuous(breaks     =seq(0,xLims[2],by=2),
                            minor_breaks=seq(0,xLims[2],by=0.02),
+                           guide="axis_minor")+
+        scale_y_continuous(breaks     =seq(0,yLims[2],by=2),
+                           minor_breaks=seq(0,yLims[2],by=1),
                            guide="axis_minor")+
         coord_cartesian(xlim=xLims,ylim=yLims)+
         theme(ggh4x.axis.ticks.length.minor=rel(1))
@@ -94,19 +101,18 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 1000000){
             mapping = aes(x=x,xend=xend,y=yOffset,yend=yOffset,fill=NULL,text=NULL),
             color="black"
           )
+          #Build hovertext
+          currGenes$hoverText <- paste0(
+            "<b>id:  </b>",currGenes$id," (",currGenes$strand," strand)","<br>",
+            "<b>chr_range: </b>",trimws(currGenes$seqid),"_",
+            gsub(" ","",paste0(format(currGenes$start,big.mark = ","),"-",format(currGenes$end,big.mark = ","))),
+            "<br><b>other attributes:</br></b>",gsub(";","<br>",trimws(currGenes$attributes))
+          )
+          #Add label
+          currPlot <- currPlot + 
+            annotate("text",label="Genes:",color="black",
+                     x=min(currGenes$x)-1.3,y=mean(currGenes$yOffset))
         }
-        #Build hovertext
-        currGenes$hoverText <- paste0(
-          "<b>id:  </b>",currGenes$id," (",currGenes$strand," strand)","<br>",
-          "<b>chr_range: </b>",trimws(currGenes$seqid),"_",
-          gsub(" ","",paste0(format(currGenes$start,big.mark = ","),"-",format(currGenes$end,big.mark = ","))),
-          "<br><b>other attributes:</br></b>",gsub(";","<br>",trimws(currGenes$attributes))
-        )
-        
-        #Add label
-        currPlot <- currPlot + 
-          annotate("text",label="Genes:",color="black",
-                   x=min(currGenes$x)-1.3,y=mean(currGenes$yOffset))
       }
       
       #Annotate name
@@ -119,12 +125,10 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 1000000){
       currPlotly <- ggplotly(currPlot,tooltip = "text")
       
       template <- paste(
-        "<b>id:  </b>",currDfSub$id,"<br>",
-        "<b>chr: </b>",currDfSub$chr_orig,"<br>",
-        "<b>Interval start (bp): </b>",format(currDfSub$min,big.mark = ","),"<br>",
-        "<b>Interval end (bp): </b>",format(currDfSub$max,big.mark = ","),"<br>",
-        "<b>Interval range (bp): </b>",format(currDfSub$max - currDfSub$min +1,big.mark = ","),"<br>",
-        "<b>Median value: </b>",round(currDfSub$median,3)
+        "<b>",currDfSub$id," @ ",currDfSub$chr_orig,"</b><br>",
+        "<b>Interval (bp): </b>",format(currDfSub$min,big.mark = ","),"-",format(currDfSub$max,big.mark = ","),"<br>",
+        "<b>Interval range: </b>",format(currDfSub$max - currDfSub$min +1,big.mark = ","),"<b> & CN: </b>",round(currDfSub$median,3),"<br>",
+        "<b>Midpoint: </b>",format(currDfSub$mid,big.mark = ","),"<b> & CN: </b>",round(currDfSub$CN,3)
       )
       
       if(length(uniChr)>1&length(unique(currDfSub_i$id))>1){

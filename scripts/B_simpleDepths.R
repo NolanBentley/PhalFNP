@@ -1,66 +1,140 @@
 #Setup environment
-wd <- "~/Experiments/PhalFNP/";setwd(wd)
+wd <- "~/Experiments/PhalFNP";setwd(wd)
+kVal <- 7
+divCutoffs <- c(1.5,2.5)
+outDir  <- "./depthImages"
+unzippedCovPath <- "./data_ignored/secondary/cnv/unzipped"
+winName <- "7x10kb"
+badLocusSpacing <- 2500
+
+#Load functions
+source("./scripts/functions/prepareDepths.R")
+source("./scripts/functions/interactiveAggPlot.R")
+
+#Load libraries
 library(ggplot2)
+library(hexbin)
+library(ggh4x)
+library(plotly)
+library(htmlwidgets)
+library(zoo)
 
 #Find files
-covFiles <- list.files(path = "data_ignored/secondary/cnv/unzipped/",full.names = T)
+covFiles <- list.files(path = unzippedCovPath,full.names = T)
 idName   <- gsub("__.*","",gsub("\\.cov$","",basename(covFiles)))
 fullPlotFiles <- file.path("data_ignored/simplePlots",paste0(idName,"_Chr00.png"))
 
-#Loop over files
-for(i in 1:length(covFiles)){
-  if(i==1){compDV <- NULL}
-  #Read and clean
-  indDepth   <- read.delim(covFiles[i])
-  colnames(indDepth)<- c("chr","start","end","mappable","counts","CN")
-  indDepth <- indDepth[grep("Chr",indDepth$chr),]
-  indDepth$i    <- i
-  indDepth$file <- covFiles[i]
-  indDepth$id   <- idName[i]
-  indDepth$order<- 1:nrow(indDepth)
-  indDepth$mid  <- (indDepth$start+indDepth$end)/2
+#Determine id buffer width
+id10Power <-nchar(max(as.numeric(gsub("_.*","",gsub(".*FIL.._","",idName)))))-1
+
+#Load gene data
+if(!file.exists("data/geneDf.csv")){source("scripts/functions/generateGeneDf.R")}
+geneDf <- read.csv("data/geneDf.csv")
+
+#First loop to accumulate strange loci for downstream filtering
+currFileInd<-which(idName=="phal_FIL20_47_F_M2_1")
+for(currFileInd in 1:length(covFiles)){
+  #Load data
+  indDepth <- prepareDepths(i = currFileInd,currFile = covFiles[currFileInd],currId = idName[currFileInd],k = kVal)
+  indDepth <- cbind(formatId(indDepth$id,id10Power),indDepth)
   
+  #Determine unusual values 
+  indDepth$divLogic    <- indDepth$CN      >=max(divCutoffs)|indDepth$CN      <=min(divCutoffs)
+  indDepth$winDivLogic <- (indDepth$winMedCN>=max(divCutoffs)|indDepth$winMedCN<=min(divCutoffs))&indDepth$winLogic
   
-  #Add in unusual values to divergent data.frame
-  compDV <- rbind(compDV,indDepth[indDepth$CN>=2.5|indDepth$CN<=1.5,])
+  #Add divergent rows to summary table 
+  if(currFileInd==1){compDV <- NULL}
+  compDV <- rbind(compDV,indDepth[indDepth$divLogic|indDepth$winDivLogic,])
   
-  #Plot full
-  maxX <- ceiling(max(indDepth$mid/1000000))
-  p1 <- ggplot(indDepth,aes(mid/1000000,CN))+
-    geom_hline(yintercept = 2,color="red")+
-    geom_bin_2d(binwidth=c(0.2,0.1))+theme_bw()+
-    scale_fill_viridis_c(trans="log10")+
-    scale_y_continuous(limits = c(0,8   ),breaks = 0:10)+
-    scale_x_continuous(limits = c(0,maxX),breaks = seq(0,maxX,by=1))+
-    facet_wrap(~chr,ncol = 1)+
-    labs(title=gsub("\\.cov$","",idName[i]),x="Midpoint (Mb)","Copy Number")
-  ggsave(plot = p1,filename = fullPlotFiles[i],height = 26,width = 15,dpi = 600)
+  print(currFileInd)
+}
+
+#Analyse divergent loci for overepresented windows
+i<-1
+compDV$overlaps <- NA
+compMat <- as.matrix(compDV[,c("i","chrN","start","end","mid","overlaps")])
+uniIs <- unique(compDV$i)
+i<-1
+for(i in 1:length(uniIs)){
+  iLogic <- compMat[,"i"]==uniIs[i]
+  currIsI  <- compMat[ iLogic,]
+  currNotI <- compMat[!iLogic,]
+  for(j in 1:nrow(currIsI)){
+    currMat  <- matrix(currIsI[j,c("chrN","mid")],nrow=nrow(currNotI),ncol=2,byrow = T)
+    currIsI[j,"overlaps"]<-sum(
+        currNotI[,2]==currMat[,1]&
+        currNotI[,3]<=currMat[,2]&
+        currNotI[,4]>=currMat[,2]
+    )
+  }
+  compMat[ iLogic,] <- currIsI
+  print(i)
+}
+hist(compMat[,"overlaps"],1000)
+
+badLoci <- as.data.frame(compMat[which(compMat[,"overlaps"]>0.05*max(compMat[,"overlaps"],na.rm = T)),])
+badLoci <- badLoci[order(badLoci$chrN,badLoci$start,badLoci$end),]
+ith <- 1
+whileT <- T
+while(whileT){
+  currLocus <- badLoci[ith,]
+  currLogic <- 
+    badLoci$chrN==currLocus$chrN&
+    badLoci$start-badLocusSpacing <= currLocus$mid &
+    badLoci$end + badLocusSpacing >= currLocus$mid
+  currLogic[(1:nrow(badLoci))<=ith]<-F
+  badLoci <- badLoci[!currLogic,]
+  if(ith==nrow(badLoci)){
+    whileT <- F
+  }
+  print(paste0(ith," (",nrow(badLoci),", -",sum(currLogic),")"))
+  ith <- ith+1
+}
+write.csv(badLoci,"data/highlyDivergentCNLoci.csv")
+
+
+#Loop over files WITH FILTERING (not implemented yet)
+currFileInd<-which(idName=="phal_FIL20_47_F_M2_1")
+for(currFileInd in 1:length(covFiles)){
+  #Load data
+  indDepth <- prepareDepths(i = currFileInd,currFile = covFiles[currFileInd],currId = idName[currFileInd],k = kVal,
+                            lociToRemove = badLoci,filterOnBadLoci = T)
+  indDepth <- cbind(formatId(indDepth$id,id10Power),indDepth)
+  
+  #For checking subsetting indDepth[unique(as.vector(mapply(`:`,(which(diff(indDepth$order)!=1)-10),(which(diff(indDepth$order)!=1)+10)))),]
+  
+  # Create file names for plots
+  indDepth$scaffoldOrChr       <- c("scaffold","Chr")[grepl("^Chr",indDepth$chr)+1] 
+  indDepth$multiLineMultiChr   <- file.path(outDir,"multiChr" ,paste0("LSVPlot_", winName,"_",indDepth$scaffoldOrChr,".html"))
+  indDepth$multiLineSingleChr  <- file.path(outDir,"singleChr",paste0("LSVPlot_", winName,"_",indDepth$chr,          ".html"))
+  indDepth$singleLineMultiChr  <- file.path(outDir,"multiChr",indDepth$idNum_bi,paste0("LSVPlot_",winName,"_",indDepth$id_form,".html"))
+  indDepth$singleLineSingleChr <- file.path(
+    outDir,"singleChr",paste0("singleLine_",indDepth$chr),indDepth$idNum_bi,
+    paste0("LSVPlot_",winName,"_",indDepth$chr,"_",indDepth$id_form,".html")
+  )
+  
+  #Determine unusual values 
+  indDepth$divLogic    <- indDepth$CN      >=max(divCutoffs)|indDepth$CN      <=min(divCutoffs)
+  indDepth$winDivLogic <- (indDepth$winMedCN>=max(divCutoffs)|indDepth$winMedCN<=min(divCutoffs))&indDepth$winLogic
+  
+  #Add divergent rows to summary table 
+  if(currFileInd==1){compDV2 <- NULL}
+  compDV2 <- rbind(compDV2,indDepth[indDepth$divLogic|indDepth$winDivLogic,])
+  
+  #Make line specific plots
+  plottedDf <- NULL
+  plottedDf <- prepareCNVForAggPlot(indDepth,winName)
+  plottedDf <- plottedDf[plottedDf$chr%in%unique(plottedDf$chr[plottedDf$winDivLogic]),]
+  if(nrow(plottedDf)>0){aggPlotFun(plottedDf,plottedDf$singleLineSingleChr,geneDf)}
   
   #Print progress
-  cat(i)
-  cat(": ")
-  cat(idName[i])
-  
-  #Plot singles
-  j<-1
-  uniChr <- unique(indDepth$chr)
-  pList <- list()
-  singleChrFiles <- paste0(gsub("_Chr00\\.png$","",fullPlotFiles[i]),"_",uniChr,".png")
-  for(j in 1:length(uniChr)){
-    pList[[j]] <- ggplot(indDepth[indDepth$chr==uniChr[j],],
-                         aes(mid/1000000,CN))+
-      geom_hline(yintercept = 2,color="red")+
-      geom_bin_2d(binwidth=c(0.2,0.1))+theme_bw()+
-      scale_fill_viridis_c(trans="log10")+
-     scale_y_continuous(limits = c(0,8),breaks = 0:10)+
-      scale_x_continuous(limits = c(0,maxX),breaks = seq(0,maxX,by=1))+
-      facet_wrap(~chr,ncol = 1)+
-      labs(title=gsub("\\.cov$","",idName[i]),x="Midpoint (Mb)","Copy Number")
-    ggsave(plot = pList[[j]],filename = singleChrFiles[j],height = 8.5,width = 15,dpi = 600)
-    cat(".")
-  }
-  cat("!\n")
+  print(round(currFileInd/length(covFiles),4))
 }
+
+#Due to debuggining, check for repeats
+compDV2$coded<-paste0(compDV2$id_form,"__",compDV2$chr,"_",compDV2$start,"..",compDV2$end)
+compDV2 <- compDV2[!duplicated(compDV2$coded),]
+
 
 #Identify consecutive intervals
 compDV$chrNum <-as.numeric(gsub("Chr|scaffold_","",compDV$chr))
