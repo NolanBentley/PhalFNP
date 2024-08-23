@@ -71,7 +71,5 @@ prepareCNVForAggPlot <-function(x,winName){
   x$IntervalMidpoint_Mbp <- x$mid/1000000
   x$median   <- x$winMedCN
   x$hasDivergentMedian <- x$divLogic
-  x$singleLineMultiChr <- paste0(x$id,"_",x$chr,"_",winName,".png")
-  x$multiLineSingleChr
   return(x)
 }

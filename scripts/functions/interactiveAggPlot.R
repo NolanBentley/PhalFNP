@@ -1,4 +1,4 @@
-aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 12000){
+aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 40000,plotIfNoDiv=F){
   library(ggplot2)
   library(hexbin)
   library(ggh4x)
@@ -16,6 +16,15 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 12000){
   #Make a subset of interactive points
   fileVecSub   <- fileVec  [plottedDf$hasDivergentMedian ]
   plottedDfSub <- plottedDf[plottedDf$hasDivergentMedian,]
+  
+  #If no divergent values
+  if(length(fileVecSub)==0){
+    if(plotIfNoDiv){
+      fileVecSub <- fileVec
+    }else{
+      stop("No data in divergent subset")
+    }
+  }
   
   #Loop across unique files
   uniFiles <- sort(unique(fileVecSub))

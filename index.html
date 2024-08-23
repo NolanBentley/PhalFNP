@@ -9,44 +9,30 @@ Panicum hallii fast-neutron population large structural variant explorer
 <body>
 <h1>Welcome to the large variant explorer!</h1>
 <p>
-This website houses interactive plots for exploring large (>>0.2Mb) copy-number variants from the <i>Panicum. hallii</i> fast neutron population (FNP).<br>
+This website houses interactive plots for exploring large (>0.1 Mb) copy-number variants from the <i>Panicum. hallii</i> fast neutron population (FNP).<br>
 <br>
 <dt>The y-axis values were calculated to approximate ploidy across the x-axis intervals:</dt>
-<dd>- Each point is the transformed median copy-number across a 7x window of 5Kb intervals every 23.75Kb for an individual line.</dt>
-<dd>- Each interval summarizes the mean read depth across a 2.5-5kb range of positions excluding positions with 0 depth.</dd>
-<dd>- This results in each median value being calculated from the mean coverage across 7 regions spanning approximetly 147.5Kb or larger.</dd>
-<dd>- The "copy-number" was estimated by multiplying the mean coverage across the interval by 2 and dividing by the peak mean coverage.</dd><br>
+<dd>- Each observation reports copy number across 7 intervals of ~10Kb.</dt>
+<dd>- The x-axis position is the midpoint of the 7 intervals being summarized.</dt>
+<dd>- The y-axis is the median value of copy number across the 7 intervals.</dt>
+<br>
 <dt>This data is visualized with two primary statistics:</dt>
 <dd>- <b>Hexagons:</b> the frequency of bins of position and copy number across the population being visualized.<br></dd>
-<dd>- <b>Points:</b> the normalized-coverage for specific samples subset to only the intervals where the absolute value of the y-axis exceeds certain cutoffs.</dd><br>
-<dt>This implementation removed intervals with no read dpeth, and thus omits homozygous mutations.</dt>  
+<dd>- <b>Points:</b> the median value of copy number across intervals where this value exceeds 0.5 away from diploid.</dd>
 </p>
 <br><br><b><u>multi-sample multi-chromosome plots</b></u>
 <br>Clicking on points in these plots will take you to that chromosome's multi-sample plot.
 <br>Note: These are large (~40Mb) files and will take a bit to load and render.
 <ul>
-<li><a href="/PhalFNP/depthImages/multiChr/LSVPlot_7x5Kbx23.75Kb_Chr.html">LSVPlot_7x5Kbx23.75Kb_Chr.html</a></li>
+<li><a href="/PhalFNP/depthImages/multiChr//LSVPlot_7x10kb_Chr.html">All chromosomes (This might cause your browser to become non-responsive!)</a></li>
 </ul><br><br><b><u>multi-sample single-chromosome plots</b></u>
 <br>Clicking on points in these plots will take you to that sample's multi-chromosome plot. Clicking on those points will take you to the single-chromosome plot for that line.
 <ul>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr01.html">LSVPlot_7x5Kbx23.75Kb_Chr01.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr02.html">LSVPlot_7x5Kbx23.75Kb_Chr02.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr04.html">LSVPlot_7x5Kbx23.75Kb_Chr04.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr05.html">LSVPlot_7x5Kbx23.75Kb_Chr05.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr06.html">LSVPlot_7x5Kbx23.75Kb_Chr06.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleChr/LSVPlot_7x5Kbx23.75Kb_Chr07.html">LSVPlot_7x5Kbx23.75Kb_Chr07.html</a></li>
 </ul><br><br><b><u>Single line plots</b></u>
 This section takes you to single-sample plots based on the sample ID.
 <ul>
-<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines000-099.html">Lines000-099.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines100-199.html">Lines100-199.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines200-299.html">Lines200-299.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines300-399.html">Lines300-399.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines400-499.html">Lines400-499.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines500-599.html">Lines500-599.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines600-699.html">Lines600-699.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines700-799.html">Lines700-799.html</a></li>
-<li><a href="/PhalFNP/depthImages/singleLineIndexes/Lines800-899.html">Lines800-899.html</a></li>
+<li><a href="./depthImages/singleLineIndexes/Lines000-099.html">Lines000-099</a></li>
+<li><a href="./depthImages/singleLineIndexes/Lines100-199.html">Lines100-199</a></li>
 </ul>
 </body>
 </html>
