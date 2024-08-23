@@ -121,8 +121,8 @@ for(currFileInd in 1:length(covFiles)){
   )
   
   #Determine unusual values 
-  indDepth$divLogic    <- indDepth$CN      >=max(divCutoffs)|indDepth$CN      <=min(divCutoffs)
-  indDepth$winDivLogic <- (indDepth$winMedCN>=max(divCutoffs)|indDepth$winMedCN<=min(divCutoffs))&indDepth$winLogic
+  indDepth$winDivLogic <- (indDepth$winMedCN>=max(divCutoffs) | indDepth$winMedCN<=min(divCutoffs)) & indDepth$winLogic
+  indDepth$divLogic    <- indDepth$CN>=max(divCutoffs) | indDepth$CN<=min(divCutoffs) | indDepth$winDivLogic
   
   #Add divergent rows to summary table 
   if(currFileInd==1){compDV2 <- NULL}
