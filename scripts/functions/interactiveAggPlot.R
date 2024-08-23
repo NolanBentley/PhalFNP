@@ -83,7 +83,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 40000,plotIfNoDiv=F)
       
       #Add hex plot
       currPlot <- currPlot +
-        geom_hex(binwidth=c(0.8,0.1))+
+        geom_hex(binwidth=c(0.8,0.125))+
         scale_fill_gradient(low = "grey90",high = "grey50",name="Count\nper ID")
       
       #If only one chromosome, add in genes
