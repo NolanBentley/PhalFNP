@@ -36,6 +36,7 @@ geneDf <- read.csv("data/geneDf.csv")
 badLoci <- read.csv("data/highlyDivergentCNLoci.csv")
 
 #Loop over files WITH FILTERING (not implemented yet)
+covFiles<- covFiles[grep("FIL30_43_",covFiles)]
 currFileInd<-which(idName=="phal_FIL20_47_F_M2_1")
 loopVec <- 1:length(covFiles)
 for(currFileInd in loopVec){
