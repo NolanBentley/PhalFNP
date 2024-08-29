@@ -49,16 +49,16 @@
   index_endBody <- which(trimws(index)=="</body>")
   singleLineBinPages <-paste0("./depthImages/singleLineIndexes/",gsub("\\.html$","",basename(multiChrSingleLine_bin)),".html")
   index_added <- c(
-    "<br><br><b><u>multi-sample multi-chromosome plots</b></u>",
+    "<br><br><b><u>Multi-sample multi-chromosome plots</b></u>",
     "<br>Clicking on points in these plots will take you to that chromosome's multi-sample plot.",
     "<br>Note: These are large (~40Mb) files and will take a bit to load and render.",
     "<ul>",
     sort(unique(multiChrMultiLine)),
-    "</ul><br><br><b><u>multi-sample single-chromosome plots</b></u>",
+    "</ul><br><br><b><u>Multi-sample single-chromosome plots</b></u>",
     "<br>Clicking on points in these plots will take you to that sample's multi-chromosome plot. Clicking on those points will take you to the single-chromosome plot for that line.",
     "<ul>",
     sort(unique(singleChrMultiLine)),
-    "</ul><br><br><b><u>Single line plots</b></u>",
+    "</ul><br><br><b><u>Single-line plots</b></u>",
     "This section takes you to single-sample plots based on the sample ID.",
     "<ul>",
     sort(unique(singleLineBinPages)),"</ul>"

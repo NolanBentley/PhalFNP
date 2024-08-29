@@ -4,6 +4,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 40000,plotIfNoDiv=F)
   library(ggh4x)
   library(plotly)
   library(htmlwidgets)
+  library(RColorBrewer)
   
   #Simplify
   plottedDf$IntervalMidpoint_Mbp <-round(plottedDf$IntervalMidpoint_Mbp,7)
@@ -153,6 +154,10 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 40000,plotIfNoDiv=F)
         "<b>Midpoint: </b>",format(currDfSub$mid,big.mark = ","),"<b> & CN: </b>",round(currDfSub$CN,3)
       )
       
+      #Generate colors
+      colorNums <- c(as.numeric(currDfSub$id)+1,rep(1,nrow(currGenes)))
+      colorVec <- c("#000000",colorRampPalette(brewer.pal(11,"Spectral"))(max(colorNums)-1))[colorNums]
+      
       if(length(uniChr)>1&length(unique(currDfSub_i$id))>1){
         #Multi chr plot
         currPlotly <- currPlotly %>%
@@ -160,7 +165,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 40000,plotIfNoDiv=F)
             type="scatter",mode = "markers",
             x = currDfSub$IntervalMidpoint_Mbp,
             y = currDfSub$median,
-            color=currDfSub$id,
+            marker = list(color = colorVec),
             fill="none",
             customdata = gsub("^\\.","/PhalFNP",currDfSub$multiLineSingleChr),
             showlegend = F,
@@ -173,7 +178,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 40000,plotIfNoDiv=F)
             type="scatter",mode = "markers",
             x = currDfSub$IntervalMidpoint_Mbp,
             y = currDfSub$median,
-            color=currDfSub$id,
+            marker = list(color = colorVec),
             fill="none",
             customdata = gsub("^\\.","/PhalFNP",currDfSub$singleLineSingleChr),
             showlegend = F,
@@ -186,7 +191,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 40000,plotIfNoDiv=F)
             type="scatter",mode = "markers",
             x = c(currDfSub$IntervalMidpoint_Mbp,currGenes$x),
             y = c(currDfSub$median,currGenes$yOffset),
-            color=as.factor(c(as.numeric(currDfSub$id)+1,rep(1,nrow(currGenes)))),
+            marker = list(color = colorVec),
             fill="none",
             customdata = c(gsub("^\\.","/PhalFNP",currDfSub$singleLineMultiChr),currGenes$link),
             showlegend = F,
@@ -199,7 +204,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 40000,plotIfNoDiv=F)
             type="scatter",mode = "markers",
             x = c(currDfSub$IntervalMidpoint_Mbp,currGenes$x),
             y = c(currDfSub$median,currGenes$yOffset),
-            color=as.factor(c(as.numeric(currDfSub$id)+1,rep(1,nrow(currGenes)))),
+            marker = list(color = colorVec),
             fill="none",
             customdata = c(gsub("^\\.","/PhalFNP",currDfSub$multiLineSingleChr),currGenes$link),
             showlegend = F,

@@ -88,14 +88,6 @@ for(currFileInd in loopVec){
 compDV2$coded<-paste0(compDV2$id_form,"__",compDV2$chr,"_",compDV2$start,"..",compDV2$end)
 compDV2 <- compDV2[!duplicated(compDV2$coded),]
 
-#Make multi line plots
-plottedDf <- NULL
-plottedDf <- prepareCNVForAggPlot(compDV2,winName)
-plottedDf <- plottedDf[plottedDf$chr%in%unique(plottedDf$chr[plottedDf$winDivLogic]),]
-plottedDf <- plottedDf[order(plottedDf$chrN,plottedDf$start,plottedDf$id_form,plottedDf$end,plottedDf$CN),]
-if(nrow(plottedDf)>0){aggPlotFun(plottedDf,plottedDf$multiLineMultiChr,geneDf)}
-if(nrow(plottedDf)>0){aggPlotFun(plottedDf,plottedDf$multiLineSingleChr,geneDf)}
-
 #Identify consecutive intervals
 compDV2$chrNum <-as.numeric(gsub("Chr|scaffold_","",compDV2$chr))
 baseLen <- nchar(max(compDV2$order))
@@ -114,6 +106,19 @@ compDV2[seq(max(visRows)-3,max(visRows)+3),]
 if(!file.exists("data_ignored/secondary/compDV2.csv")){
   write.csv(compDV2,"data_ignored/secondary/compDV2.csv",row.names = F)
 }
+
+#If starting here:
+# compDV2 <- read.csv("data_ignored/secondary/compDV2.csv")
+
+
+#Make multi line plots
+plottedDf <- NULL
+plottedDf <- prepareCNVForAggPlot(compDV2,winName)
+plottedDf <- plottedDf[plottedDf$chr%in%unique(plottedDf$chr[plottedDf$winDivLogic]),]
+plottedDf <- plottedDf[order(plottedDf$chrN,plottedDf$start,plottedDf$id_form,plottedDf$end,plottedDf$CN),]
+if(nrow(plottedDf)>0){aggPlotFun(plottedDf,plottedDf$multiLineMultiChr,geneDf)}
+if(nrow(plottedDf)>0){aggPlotFun(plottedDf = plottedDf,fileVec = plottedDf$multiLineSingleChr,genes = geneDf)}
+
 
 #Check for k consecutive divergent intervals
 xMax <- ceiling(max(compDV2$mid)/1000000)
