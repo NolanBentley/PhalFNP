@@ -65,9 +65,17 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 40000,plotIfNoDiv=F)
     
     j<-1
     for(j in 1:length(uniChr)){
+      #Prepare data
       currChr  <- uniChr[j]
       currDf   <- currDf_i   [currDf_i$chr==currChr   ,]
       currDfSub<- currDfSub_i[currDfSub_i$chr==currChr,]
+      
+      #Reorder to alleviate overplotting
+      if(length(unique(currDfSub$id_form))>1){
+        set.seed(1)
+        scrambleSub <- sample(1:nrow(currDfSub))
+        currDfSub <- currDfSub[scrambleSub,]
+      }
       
       #Initialize plot
       currPlot <- ggplot(currDf,aes(IntervalMidpoint_Mbp,median,
