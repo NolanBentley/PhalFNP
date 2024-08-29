@@ -20,7 +20,12 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 40000,plotIfNoDiv=F)
   #If no divergent values
   if(length(fileVecSub)==0){
     if(plotIfNoDiv){
-      fileVecSub <- fileVec
+      uniFilePos <- match(unique(fileVec),fileVec)
+      fileVecSub   <- fileVec[uniFilePos]
+      plottedDfSub <- plottedDf[uniFilePos,]
+      plottedDfSub$start<-NA
+      plottedDfSub$end  <-NA
+      plottedDfSub$CN   <-NA
     }else{
       stop("No data in divergent subset")
     }

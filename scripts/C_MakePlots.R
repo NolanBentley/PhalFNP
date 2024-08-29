@@ -20,14 +20,6 @@ library(plotly)
 library(htmlwidgets)
 library(zoo)
 
-#Find files
-covFiles <- list.files(path = unzippedCovPath,full.names = T)
-idName   <- gsub("__.*","",gsub("\\.cov$","",basename(covFiles)))
-fullPlotFiles <- file.path("data_ignored/simplePlots",paste0(idName,"_Chr00.png"))
-
-#Determine id buffer width
-id10Power <-nchar(max(as.numeric(gsub("_.*","",gsub(".*FIL.._","",idName)))))-1
-
 #Load gene data
 if(!file.exists("data/geneDf.csv")){source("scripts/functions/generateGeneDf.R")}
 geneDf <- read.csv("data/geneDf.csv")
@@ -35,9 +27,21 @@ geneDf <- read.csv("data/geneDf.csv")
 #Load bad locus data
 badLoci <- read.csv("data/highlyDivergentCNLoci.csv")
 
+#Find files
+covFiles <- list.files(path = unzippedCovPath,full.names = T)
+
+#Testing
+if(exists("debugT")&&debugT){
+  covFiles<- covFiles[grep("FIL30_43_",covFiles)]
+  loopVec<-2:4
+}
+
+#Determine id buffer width
+idName        <- gsub("__.*","",gsub("\\.cov$","",basename(covFiles)))
+fullPlotFiles <- file.path("data_ignored/simplePlots",paste0(idName,"_Chr00.png"))
+id10Power <-nchar(max(as.numeric(gsub("_.*","",gsub(".*FIL.._","",idName)))))-1
+
 #Loop over files WITH FILTERING (not implemented yet)
-covFiles<- covFiles[grep("FIL30_43_",covFiles)]
-currFileInd<-which(idName=="phal_FIL20_47_F_M2_1")
 loopVec <- 1:length(covFiles)
 for(currFileInd in loopVec){
   #Load data
@@ -68,7 +72,9 @@ for(currFileInd in loopVec){
   #Make summary plots for each line
   plottedDf <- NULL
   plottedDf <- prepareCNVForAggPlot(indDepth,winName)
-  if(nrow(plottedDf)>0){aggPlotFun(plottedDf,plottedDf$singleLineMultiChr,geneDf,plotIfNoDiv = T)}
+  if(nrow(plottedDf)>0){
+    aggPlotFun(plottedDf = plottedDf,fileVec = plottedDf$singleLineMultiChr,genes = geneDf,plotIfNoDiv = T)
+  }
   
   #Make single line and single chromosome plots only at divergent chromosomes
   plottedDf <- plottedDf[plottedDf$chr%in%unique(plottedDf$chr[plottedDf$winDivLogic]),]
