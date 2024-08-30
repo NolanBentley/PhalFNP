@@ -102,11 +102,6 @@ visRows<-which(compDV2$binExt==as.numeric(names(which.max(table(compDV2$binExt))
 compDV2[seq(min(visRows)-3,min(visRows)+3),]
 compDV2[seq(max(visRows)-3,max(visRows)+3),]
 
-#Save data
-if(!file.exists("data_ignored/secondary/compDV2.csv")){
-  write.csv(compDV2,"data_ignored/secondary/compDV2.csv",row.names = F)
-}
-
 #Make multi line plots
 plottedDf <- NULL
 plottedDf <- prepareCNVForAggPlot(compDV2,winName)
@@ -114,6 +109,9 @@ plottedDf <- plottedDf[plottedDf$chr%in%unique(plottedDf$chr[plottedDf$winDivLog
 plottedDf <- plottedDf[order(plottedDf$chrN,plottedDf$start,plottedDf$id_form,plottedDf$end,plottedDf$CN),]
 if(nrow(plottedDf)>0){aggPlotFun(plottedDf,plottedDf$multiLineMultiChr,geneDf)}
 if(nrow(plottedDf)>0){aggPlotFun(plottedDf = plottedDf,fileVec = plottedDf$multiLineSingleChr,genes = geneDf)}
+
+#Save data
+write.csv(compDV2,"data_ignored/secondary/compDV2.csv",row.names = F)
 
 #Save an image
 #save.image("data_ignored/secondary/afterCplotting.rimage")
