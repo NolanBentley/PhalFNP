@@ -122,7 +122,6 @@ if(nrow(plottedDf)>0){aggPlotFun(plottedDf = plottedDf,fileVec = plottedDf$multi
 
 #Check for k consecutive divergent intervals
 xMax <- ceiling(max(compDV2$mid)/1000000)
-geneDf <- read.csv("data/geneDf.csv")
 for(kLoop in seq(3,25,by=2)){
   kVal <- kLoop
   compDV2$kSum <- zoo::rollsum(compDV2$stagDiffs,k = kVal,fill = T)
