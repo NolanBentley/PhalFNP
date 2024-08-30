@@ -107,10 +107,6 @@ if(!file.exists("data_ignored/secondary/compDV2.csv")){
   write.csv(compDV2,"data_ignored/secondary/compDV2.csv",row.names = F)
 }
 
-#If starting here:
-# compDV2 <- read.csv("data_ignored/secondary/compDV2.csv")
-
-
 #Make multi line plots
 plottedDf <- NULL
 plottedDf <- prepareCNVForAggPlot(compDV2,winName)
@@ -119,29 +115,6 @@ plottedDf <- plottedDf[order(plottedDf$chrN,plottedDf$start,plottedDf$id_form,pl
 if(nrow(plottedDf)>0){aggPlotFun(plottedDf,plottedDf$multiLineMultiChr,geneDf)}
 if(nrow(plottedDf)>0){aggPlotFun(plottedDf = plottedDf,fileVec = plottedDf$multiLineSingleChr,genes = geneDf)}
 
-
-#Check for k consecutive divergent intervals
-xMax <- ceiling(max(compDV2$mid)/1000000)
-for(kLoop in seq(3,25,by=2)){
-  kVal <- kLoop
-  compDV2$kSum <- zoo::rollsum(compDV2$stagDiffs,k = kVal,fill = T)
-  compDV2$kIntLogic <- compDV2$kSum==kVal
-  mat1 <- matrix(which(compDV2$kIntLogic),nrow = length(which(compDV2$kIntLogic)),ncol=kVal-1)
-  mat2 <- matrix(seq(-1*(kVal-1)/2,(kVal-1)/2)[-((kVal-1)/2+1)],nrow = nrow(mat1),ncol=ncol(mat1),byrow=T)
-  compDV2$kIntLogic[unique(as.vector(mat1+mat2))]<-T
-  
-  #Full "divergent" plot
-  p1 <- ggplot(compDV2[compDV2$kIntLogic,],aes(mid/1000000,CN,color=id))+
-    geom_hline(yintercept = 2,color="red")+
-    geom_point()+
-    theme_bw()+
-    facet_wrap(~chr,ncol=3)+
-    scale_y_continuous(limits = c(0,10  ),breaks = seq(0,10))+
-    scale_x_continuous(limits = c(0,xMax),breaks = seq(0,xMax,by=5))+
-    scale_color_discrete(guide="none")+
-    labs(y=paste0("CN (minimum of ",kVal, " intervals = ",sum(compDV2$kIntLogic),")"),
-         x="Position in Mb")+
-    geom_ribbon(data = geneDf,mapping = aes(geneDf$x,y=NULL,color=NULL))
-  ggsave(p1,file=paste0("data/fullCnvPlot_",kVal,".png"),width = 10,height = 8,dpi = 600)
-  print(kVal)
-}
+#Save an image
+#save.image("data_ignored/secondary/afterCplotting.rimage")
+#load("data_ignored/secondary/afterCplotting.rimage")
