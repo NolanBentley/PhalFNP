@@ -155,8 +155,18 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 40000,plotIfNoDiv=F)
       )
       
       #Generate colors
-      colorNums <- c(as.numeric(currDfSub$id)+1,rep(1,nrow(currGenes)))
-      colorVec <- c("#000000",colorRampPalette(brewer.pal(11,"Spectral"))(max(colorNums)-1))[colorNums]
+      if(exists("currGenes")&&nrow(currGenes)>0){
+        colorNums <- c(as.numeric(currDfSub$id)+1,rep(1,nrow(currGenes)))
+        colorVec <- c("#000000",colorRampPalette(brewer.pal(11,"Spectral"))(max(colorNums)-1))[colorNums]
+      }else{
+        if(nrow(currDfSub)>0){
+          colorNums <-   as.numeric(currDfSub$id)+1
+          colorVec <- c("#000000",colorRampPalette(brewer.pal(11,"Spectral"))(max(colorNums)-1))[colorNums]
+        }else{
+          colorVec <- NA
+        }
+      }
+      
       
       if(length(uniChr)>1&length(unique(currDfSub_i$id))>1){
         #Multi chr plot
