@@ -41,12 +41,12 @@ idName        <- gsub("__.*","",gsub("\\.cov$","",basename(covFiles)))
 fullPlotFiles <- file.path("data_ignored/simplePlots",paste0(idName,"_Chr00.png"))
 id10Power <-nchar(max(as.numeric(gsub("_.*","",gsub(".*FIL.._","",idName)))))-1
 
-#Loop over files WITH FILTERING (not implemented yet)
+#Loop over files with filtering
 loopVec <- 1:length(covFiles)
 for(currFileInd in loopVec){
   #Load data
   indDepth <- prepareDepths(i = currFileInd,currFile = covFiles[currFileInd],currId = idName[currFileInd],k = kVal,
-                            lociToRemove = badLoci,filterOnBadLoci = T)
+                            lociToRemove = badLoci,filterOnBadLoci = T,subByWinLogicToggle = T)
   indDepth <- cbind(formatId(indDepth$id,id10Power),indDepth)
   
   #For checking subsetting indDepth[unique(as.vector(mapply(`:`,(which(diff(indDepth$order)!=1)-10),(which(diff(indDepth$order)!=1)+10)))),]
