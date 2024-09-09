@@ -36,7 +36,10 @@ geneDf <- read.csv("data/geneDf.csv")
 currFileInd<-which(idName=="phal_FIL20_47_F_M2_1")
 for(currFileInd in 1:length(covFiles)){
   #Load data
-  indDepth <- prepareDepths(i = currFileInd,currFile = covFiles[currFileInd],currId = idName[currFileInd],k = kVal)
+  indDepth <- prepareDepths(i = currFileInd,k = kVal,
+                            currFile = covFiles[currFileInd],
+                            currId = idName[currFileInd],
+                            subByWinLogicToggle = F)
   indDepth <- cbind(formatId(indDepth$id,id10Power),indDepth)
   
   #Determine unusual values 
