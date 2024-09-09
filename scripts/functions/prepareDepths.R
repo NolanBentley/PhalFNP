@@ -14,7 +14,9 @@ badLocusFilter <- function(indDepth,badLoci){
   return(indDepth)
 }
 
-prepareDepths <- function(i,currFile,currId,k,lociToRemove,chrToNumPattern = "Chr|scaffold_",filterToChr = T,chrPattern ="Chr",filterOnBadLoci = F){
+prepareDepths <- function(i,currFile,currId,k,lociToRemove,chrToNumPattern = "Chr|scaffold_",
+                          filterToChr = T,chrPattern ="Chr",filterOnBadLoci = F,rollToggle = T,
+                          subByWinLogicToggle = T){
   #Read and clean
   indDepth   <- read.delim(currFile) 
   if(!(nrow(indDepth)>0&ncol(indDepth)==6)){stop("Input not correct dimensions")}
@@ -35,17 +37,24 @@ prepareDepths <- function(i,currFile,currId,k,lociToRemove,chrToNumPattern = "Ch
   }
   
   #Make a rolled analysis
-  indDepth <- cbind(indDepth,data.frame(
-    winMeanChr=zoo::rollmean(  indDepth$chrN  ,k = k,fill = T),
-    winMinPos =     rollmin(   indDepth$start ,k = k,fill = T),
-    winMaxPos =zoo::rollmax(   indDepth$end   ,k = k,fill = T),
-    winMeanCN =zoo::rollmean(  indDepth$CN    ,k = k,fill = T),
-    winMedCN  =zoo::rollmedian(indDepth$CN    ,k = k,fill = T),
-    winIntN   =       rollN(   indDepth$start ,k = k,fill = T)
-  ))
-  indDepth$winLogic  <- ((indDepth$winMeanChr%%1)==0)&(indDepth$winIntN==k)
-  indDepth$winLen    <-  indDepth$winMaxPos-indDepth$winMinPos+1
-  indDepth$winMid    <- (indDepth$winMaxPos+indDepth$winMinPos)/2
+  if(rollToggle){
+    indDepth <- cbind(indDepth,data.frame(
+      winMeanChr=zoo::rollmean(  indDepth$chrN  ,k = k,fill = T),
+      winMinPos =     rollmin(   indDepth$start ,k = k,fill = T),
+      winMaxPos =zoo::rollmax(   indDepth$end   ,k = k,fill = T),
+      winMeanCN =zoo::rollmean(  indDepth$CN    ,k = k,fill = T),
+      winMedCN  =zoo::rollmedian(indDepth$CN    ,k = k,fill = T),
+      winIntN   =       rollN(   indDepth$start ,k = k,fill = T)
+    ))
+    indDepth$singChrLogic <- (indDepth$winMeanChr%%1)==0
+    indDepth$edgeExcLogic <- (indDepth$winIntN==k)
+    indDepth$winLogic  <- indDepth$singChrLogic & indDepth$edgeExcLogic
+    if(subByWinLogicToggle){
+      indDepth <- indDepth[indDepth$winLogic,]
+    }
+    indDepth$winLen    <-  indDepth$winMaxPos-indDepth$winMinPos+1
+    indDepth$winMid    <- (indDepth$winMaxPos+indDepth$winMinPos)/2
+  }
   
   #Return data
   return(indDepth)
