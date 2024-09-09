@@ -110,6 +110,11 @@ plottedDf <- plottedDf[order(plottedDf$chrN,plottedDf$start,plottedDf$id_form,pl
 if(nrow(plottedDf)>0){aggPlotFun(plottedDf,plottedDf$multiLineMultiChr,geneDf)}
 if(nrow(plottedDf)>0){aggPlotFun(plottedDf = plottedDf,fileVec = plottedDf$multiLineSingleChr,genes = geneDf)}
 
+#Mean ID away from ploid
+sumGt0.2AwayFromPloid <- aggregate((0.5-abs(compDV2$winMedCN%%1-0.5))>0.2,by=list(compDV2$id_form),sum4)
+hist(sumGt0.2AwayFromPloid$x,breaks = 10000,ylim=c(0,50))
+head(sumGt0.2AwayFromPloid[order(sumGt0.2AwayFromPloid$x,decreasing = T),],10)
+
 #Save data
 write.csv(compDV2,"data_ignored/secondary/compDV2.csv",row.names = F)
 
