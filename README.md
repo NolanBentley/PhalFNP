@@ -6,14 +6,14 @@ https://nolanbentley.github.io/PhalFNP/index.html
 
 # Documenting the process
 ## Accessing the input files
-These sequence mapping files and more originate from mapping reads to the _Panicum hallii_ V3.2 houased on the Phytozome (https://phytozome-next.jgi.doe.gov/info/Phallii_v3_2) database.
+These sequence mapping files and more originate from mapping reads to the _Panicum hallii_ V3.2 housed on the Phytozome (https://phytozome-next.jgi.doe.gov/info/Phallii_v3_2) database.
 
 These files may be accessed via the JGI genome portal (https://genome.jgi.doe.gov/portal/ResaPanihallii/ResaPanihallii.info.html). 
 
 This repo originally focused on the analysis of the bam files from this project (see data/bamFilesList.txt) as well as downstream variant files produced through the analysis of GATK and DELLY of collaborators. These downstream files are available upon request.
 
 ## Downloading the bam files
-bam files were downloaded via JGI's curl-based API. This process was controlled by a modified version of rScriptToControlJamo.R. 
+bam files were downloaded via JGI's curl-based API.
 
 ## Calculating copy number
 bam files were then analyzed across a series of genomic intervals to calculate copy number using delly cnv. 
