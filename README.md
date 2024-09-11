@@ -27,7 +27,7 @@ The resulting cov files were then analyzed in R using the script detectBadInterv
 The script makePlots.R was then used to analyze each cov file, remove intervals within 2500 base pairs of a loci listed in data/highlyDivergentCNLoci.csv, and finally summarize the median read depth across 7 adjacent intervals (spanning >=70K bp). It then produced a series of ggplot2 -> plotly -> htmlwidget derived interactive html files that visualize the windowed copy number analysis for easy exploration. The current URL to visualize the results of this is at  https://nolanbentley.github.io/PhalFNP/index.html 
 
 ## Produce html files to facilitate access to interative plots
-The buildWebsiteIndex script then finally used to produce a series of html files that link together the various plots into an easy to explore format. 
+The buildWebsiteIndex.R script then finally used to produce a series of html files that link together the various plots into an easy to explore format. 
 
 
 
