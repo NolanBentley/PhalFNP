@@ -85,7 +85,7 @@ aggPlotFun <- function(plottedDf,fileVec,genes,intMinDist = 40000,plotIfNoDiv=F)
         theme_bw()+
         guides(color="none")+
         geom_hline(yintercept = 2,color="red")+
-        labs(x="Interval midpoint (Mbp)\n ",y="\n Median(average read depth)")+
+        labs(x="Interval midpoint (Mbp)\n ",y="\n Median copy number")+
         scale_x_continuous(breaks     =seq(0,xLims[2],by=2),
                            minor_breaks=seq(0,xLims[2],by=0.02),
                            guide="axis_minor")+

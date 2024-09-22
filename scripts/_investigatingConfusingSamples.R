@@ -1,5 +1,5 @@
 #Set variables
-wd <- "~/Experiments/PhalFNP/"
+wd <- "~/Experiments/PhalFNP/"; setwd(wd)
 minInitFilter<-0.001
 maxInitFilter<-0.02
 vcfFile    <- "data_ignored/primary/vcf/genotype_gvcfs.vcf"
