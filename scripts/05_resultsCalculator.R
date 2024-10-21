@@ -151,6 +151,9 @@ sd(df2SamAgg2$x[df2SamAgg2$dosage=="FIL30"])
 df2SamAgg <- aggregate(df2$sample,by=list(sample=df2$sample,analysis=df2$analysis),length)
 df2SamAgg$dosage <- gsub("_.*","",df2SamAgg$sample)
 
+#T-test
+t.test(df2SamAgg2$x[df2SamAgg2$dosage=="FIL20"],df2SamAgg2$x[df2SamAgg2$dosage=="FIL30"])
+
 #Violin plot
 ggplot(df2SamAgg,aes(analysis,x,fill=dosage))+
   geom_violin(draw_quantiles = c(0.5),alpha=0.5)+
@@ -163,7 +166,8 @@ ggplot(df2[which(df2$lengthAlt>0),],aes(lengthAlt,fill=dosage))+
   scale_x_continuous(trans="log10",
                      breaks = 10^(0:6),
                      minor_breaks = rep(0:5*2,5)*10^sort(rep(0:4,6)))+
-  labs(x="Variant length (bp)",y="Density of variants longer than 1 bp per dosage")
+  labs(x="Variant length (bp)",
+       y="Density of variants longer than 1 bp per dosage")
 
 
 
