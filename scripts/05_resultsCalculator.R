@@ -169,33 +169,91 @@ ggplot(df2[which(df2$lengthAlt>0),],aes(lengthAlt,fill=dosage))+
   labs(x="Variant length (bp)",
        y="Density of variants longer than 1 bp per dosage")
 
-
-
-
-
-#Tree plot of variant types
-treeFun<-function(x){
-  colnames(x)[colnames(x)=="value"]<-"count"
-  p1 <- ggplot(x, aes(area = count, fill = count, label=label)) +
-    geom_treemap()+
-    geom_treemap_text(fontface = "italic", colour = "white", place = "centre",
-                      grow = F)+
-    scale_fill_viridis_c(trans="log10",direction = -1)
-  return(p1)
-}
-treewidth <- 8
-treeratio <- 3/5 
-tab3 <- melt(table(type=df2$type,impact=df2$impact))
-plottedDf <- tab3[tab3$value>0,]
-plottedDf$label <- paste0("Type: ",plottedDf$type,"\n","Impact: ",plottedDf$impact,"\nn=",gsub(" ","",format(plottedDf$value,big.mark = ",")))
-ggsave(treeFun(x = plottedDf),filename = "data/treemap.png",
-       width = treewidth,height = treewidth*treeratio,
-       dpi = 600,units = "in")
-
-#
-uniChr <- unique(df1$chrom[grepl("^.hr..$",df1$chrom)])
-for(i in uniChr){
-  for(j in uniChr){
-    bndMat[i,j]<-sum(df1$chrom==paste0(i,"->",j))
+#Unused analysis
+if(F){
+  #Tree plot of variant types
+  treeFun<-function(x){
+    colnames(x)[colnames(x)=="value"]<-"count"
+    p1 <- ggplot(x, aes(area = count, fill = count, label=label)) +
+      geom_treemap()+
+      geom_treemap_text(fontface = "italic", colour = "white", place = "centre",
+                        grow = F)+
+      scale_fill_viridis_c(trans="log10",direction = -1)
+    return(p1)
+  }
+  treewidth <- 8
+  treeratio <- 3/5 
+  tab3 <- melt(table(type=df2$type,impact=df2$impact))
+  plottedDf <- tab3[tab3$value>0,]
+  plottedDf$label <- paste0("Type: ",plottedDf$type,"\n","Impact: ",plottedDf$impact,"\nn=",gsub(" ","",format(plottedDf$value,big.mark = ",")))
+  ggsave(treeFun(x = plottedDf),filename = "data/treemap.png",
+         width = treewidth,height = treewidth*treeratio,
+         dpi = 600,units = "in")
+  
+  #
+  uniChr <- unique(df1$chrom[grepl("^.hr..$",df1$chrom)])
+  for(i in uniChr){
+    for(j in uniChr){
+      bndMat[i,j]<-sum(df1$chrom==paste0(i,"->",j))
+    }
   }
 }
+
+#Gene-based breakdown
+df1$begChrom  <- gsub("->.*","",gsub("scaffold_","",df1$chrom))
+df1$endChrom  <- gsub(".*->","",gsub("scaffold_","",df1$chrom))
+geneDf$df1Sum     <- NA
+geneDf$df1SumHigh <- NA
+geneDf$highLines  <- NA
+geneDf$otherLines <- NA
+
+df1$type_impact <- paste0(df1$type,"_",df1$impact)
+table(df1$type_impact)
+df1$highLogic   <- df1$type_impact%in%c("DEL_SV","DEL_NA","INDEL_HIGH","SNP_HIGH")
+df1$delMissing  <- df1$type_impact=="DEL_NA"
+df1$altChrom    <- gsub(".*scaffold_","",gsub(".*Chr","Chr",gsub(":.*","",df1$alt_allele)))
+df1$altPost     <- gsub("\\[.*","",gsub("\\].*","",gsub(".*:","",df1$alt_allele)))
+for(i in 1:nrow(geneDf)){
+  currGene <- geneDf[i,]
+  varBegTest <- df1$begPos  > currGene$start-1000 & df1$begPos  < currGene$end+1000 &  df1$begChrom == currGene$seqid
+  varEndTest <- df1$endPos  > currGene$start-1000 & df1$endPos  < currGene$end+1000 &  df1$endChrom == currGene$seqid
+  bndTest    <- df1$altPost > currGene$start-1000 & df1$altPost < currGene$end+1000 &  df1$altChrom == currGene$seqid
+  overlapLogic  <- varBegTest|varEndTest|bndTest
+  geneDf$df1SumHigh[i]    <- sum(overlapLogic&df1$highLogic)
+  geneDf$df1Sum[i]        <- sum(overlapLogic)
+  geneDf$highLines[i]     <- paste0(sort(unique(df1$sample[overlapLogic& df1$highLogic])),collapse = "|")
+  geneDf$otherLines[i]    <- paste0(sort(unique(df1$sample[overlapLogic&!df1$highLogic])),collapse = "|")
+  if(i%%1000==1){cat(i," (",round(i/nrow(geneDf)*100,2),"%)\n")}
+}
+geneDf$idInDf1    <-geneDf$id%in%df1$gene
+geneDf$idInDf1High<-geneDf$id%in%df1$gene[df1$highLogic]
+mean(geneDf$idInDf1)
+mean(geneDf$df1Sum>=1) #Reported value
+mean(geneDf$df1Sum>=1|geneDf$idInDf1) #Reported value
+mean(geneDf$idInDf1High)
+mean(geneDf$df1SumHigh>=1) #Reported value
+mean(geneDf$df1SumHigh>=1|geneDf$idInDf1High)
+
+#Save gene record
+geneInfo <- "data_ignored/primary/assembly/Phallii_590_v3.2.annotation_info.txt"
+geneInfo <- read.delim(geneInfo)
+if(!all(geneDf$id%in%geneInfo$locusName)){stop("Mismatch between geneDf and geneInfo!")}
+geneInfo <- geneInfo[order(geneInfo$locusName,geneInfo$transcriptName),]
+uniLoci <- unique(geneInfo$locusName)
+dupeLoci  <- unique(geneInfo$locusName[duplicated(geneInfo$locusName)])
+dupeLogic <-uniLoci%in%dupeLoci
+collapsedInfo <- NULL
+for(i in 1:length(uniLoci)){
+  currInfo <- geneInfo[uniLoci[i]==geneInfo$locusName,]
+  if(dupeLogic[i]){
+    currInfo   <- as.data.frame(apply(currInfo,2,function(x){paste0(unique(x),collapse = "|")},simplify = F))
+  }
+  collapsedInfo <- rbind(collapsedInfo,currInfo)
+  if(i%%1000==1){print(i)}
+}
+geneDfMerged <- cbind(geneDf,collapsedInfo[match(geneDf$id,collapsedInfo$locusName),])
+write.csv(x = geneDfMerged,file = "data/mutationAnnotatedGeneDf.csv")
+
+#
+
+
